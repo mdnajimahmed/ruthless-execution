@@ -1,6 +1,9 @@
-import { GoalGrid } from '@/components/GoalGrid';
+import { useNavigate } from 'react-router-dom';
+import { AnalyticsView } from '@/components/AnalyticsView';
 
-const Index = () => {
+const AnalyticsPage = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* App header */}
@@ -11,17 +14,17 @@ const Index = () => {
           </div>
           <div>
             <h1 className="font-semibold text-sm">Goal Tracker</h1>
-            <p className="text-xs text-muted-foreground">Month-by-month planning</p>
+            <p className="text-xs text-muted-foreground">Analytics Overview</p>
           </div>
         </div>
       </header>
 
       {/* Main content */}
       <main className="flex-1 overflow-hidden">
-        <GoalGrid />
+        <AnalyticsView onNavigateToGrid={() => navigate('/')} />
       </main>
     </div>
   );
 };
 
-export default Index;
+export default AnalyticsPage;

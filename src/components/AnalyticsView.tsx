@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { MonthPicker } from './MonthPicker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 import {
-  ArrowLeft,
   Grid3X3,
   BarChart3,
   TrendingUp,
@@ -17,6 +16,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  ChevronRight,
 } from 'lucide-react';
 import {
   BarChart,
@@ -27,19 +27,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { ViewMode } from '@/types/goals';
 
 interface AnalyticsViewProps {
-  onViewChange: (view: ViewMode) => void;
+  onNavigateToGrid: () => void;
 }
 
-const COLORS = {
-  hit: 'hsl(142, 71%, 45%)',
-  miss: 'hsl(0, 84%, 60%)',
-  partial: 'hsl(38, 92%, 50%)',
-};
-
-export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
+export const AnalyticsView = ({ onNavigateToGrid }: AnalyticsViewProps) => {
+  const navigate = useNavigate();
   const {
     currentYear,
     currentMonth,
@@ -64,6 +58,7 @@ export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
     return analytics.goalAnalytics.map((ga) => {
       const goal = monthData.goals.find((g) => g.id === ga.goalId);
       return {
+        id: ga.goalId,
         name: goal?.title || 'Unknown',
         completionRate: ga.completionRate,
         hitDays: ga.hitDays,
@@ -81,7 +76,6 @@ export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
       value: r.count,
     }));
   }, [analytics.mostFrequentMissedReasons]);
-
 
   const bestGoal = monthData.goals.find((g) => g.id === analytics.bestPerformingGoal);
   const worstGoal = monthData.goals.find((g) => g.id === analytics.worstPerformingGoal);
@@ -104,7 +98,7 @@ export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onViewChange('grid')}
+            onClick={onNavigateToGrid}
             className="gap-2"
           >
             <Grid3X3 className="h-4 w-4" />
@@ -247,8 +241,9 @@ export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
                 <div className="space-y-3">
                   {goalPerformanceData.map((goal) => (
                     <div
-                      key={goal.name}
-                      className="flex items-center gap-4 p-3 rounded-lg bg-muted/30"
+                      key={goal.id}
+                      className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/analytics/${goal.id}`)}
                     >
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{goal.name}</h4>
@@ -287,6 +282,7 @@ export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
                           </div>
                           <Progress value={goal.completionRate} className="h-2" />
                         </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </div>
                   ))}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, isToday, isBefore, startOfDay, subDays, addDays } from 'date-fns';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { GoalRowHeader } from './GoalRowHeader';
@@ -7,17 +8,12 @@ import { AddGoalDialog, AddGoalButton } from './AddGoalDialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Grid3X3, BarChart3 } from 'lucide-react';
-import { ViewMode } from '@/types/goals';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
-interface GoalGridProps {
-  onViewChange: (view: ViewMode) => void;
-  onSelectDay: (date: string) => void;
-}
-
-export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
+export const GoalGrid = () => {
+  const navigate = useNavigate();
   const {
     currentYear,
     currentMonth,
@@ -61,6 +57,18 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
       setEndDate(date);
       // Also sync the month data
       goToMonth(date.getFullYear(), date.getMonth());
+    }
+  };
+
+  const handleSelectDay = (date: string) => {
+    navigate(`/day/${date}`);
+  };
+
+  const handleViewAnalytics = (goalId?: string) => {
+    if (goalId) {
+      navigate(`/analytics/${goalId}`);
+    } else {
+      navigate('/analytics');
     }
   };
 
@@ -148,7 +156,7 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onViewChange('analytics')}
+            onClick={() => handleViewAnalytics()}
             className="gap-2"
           >
             <BarChart3 className="h-4 w-4" />
@@ -176,7 +184,7 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
                     !info.isOfficeDay && 'bg-day-nonoffice',
                     info.isToday && 'bg-day-today'
                   )}
-                  onClick={() => onSelectDay(info.date)}
+                  onClick={() => handleSelectDay(info.date)}
                   onDoubleClick={() => {
                     // Toggle non-office day for current month only
                     if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
@@ -203,7 +211,7 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
                   analytics={analytics}
                   onUpdate={(updates) => updateGoal(goal.id, updates)}
                   onDelete={() => deleteGoal(goal.id)}
-                  onViewAnalytics={() => onViewChange('analytics')}
+                  onViewAnalytics={() => handleViewAnalytics(goal.id)}
                 />
                 
                 {days.map((date) => {
