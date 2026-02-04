@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import DayPage from "./pages/DayPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import GoalAnalyticsPage from "./pages/GoalAnalyticsPage";
+import BacklogPage from "./pages/BacklogPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/day/:date" element={<DayPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/analytics/:goalId" element={<GoalAnalyticsPage />} />
+          <Route path="/backlog" element={<BacklogPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

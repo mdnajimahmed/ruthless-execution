@@ -1,4 +1,7 @@
+import { Link } from 'react-router-dom';
 import { GoalGrid } from '@/components/GoalGrid';
+import { Button } from '@/components/ui/button';
+import { ClipboardList } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -14,6 +17,12 @@ const Index = () => {
             <p className="text-xs text-muted-foreground">Self-discipline applied to priorities</p>
           </div>
         </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/backlog">
+            <ClipboardList className="h-4 w-4 mr-1" />
+            Backlogs
+          </Link>
+        </Button>
       </header>
 
       {/* Main content */}
