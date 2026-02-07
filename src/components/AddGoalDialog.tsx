@@ -30,6 +30,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('07:30');
   const [isWeekendGoal, setIsWeekendGoal] = useState(false);
+  const [isWeekdayGoal, setIsWeekdayGoal] = useState(false);
   const [targetEndDate, setTargetEndDate] = useState<Date | undefined>(addMonths(new Date(), 1));
 
   const handleAdd = () => {
@@ -46,6 +47,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
       allocatedMinutes: Math.max(0, allocatedMinutes),
       tags: [],
       isWeekendGoal,
+      isWeekdayGoal,
       targetEndDate: targetEndDate ? format(targetEndDate, 'yyyy-MM-dd') : undefined,
     });
 
@@ -53,6 +55,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
     setStartTime('07:00');
     setEndTime('07:30');
     setIsWeekendGoal(false);
+    setIsWeekdayGoal(false);
     setTargetEndDate(addMonths(new Date(), 1));
     onOpenChange(false);
   };
@@ -93,19 +96,44 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
               />
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="weekendGoal"
-              checked={isWeekendGoal}
-              onCheckedChange={(checked) => setIsWeekendGoal(checked === true)}
-            />
-            <label
-              htmlFor="weekendGoal"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Weekend Goal
-            </label>
-            <span className="text-xs text-muted-foreground">(Only active on Sat & Sun)</span>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Goal Scope</label>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="weekdayGoal"
+                  checked={isWeekdayGoal}
+                  onCheckedChange={(checked) => {
+                    setIsWeekdayGoal(checked === true);
+                    if (checked) setIsWeekendGoal(false);
+                  }}
+                />
+                <label
+                  htmlFor="weekdayGoal"
+                  className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Weekday Only
+                </label>
+                <span className="text-xs text-muted-foreground">(Mon–Fri)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="weekendGoal"
+                  checked={isWeekendGoal}
+                  onCheckedChange={(checked) => {
+                    setIsWeekendGoal(checked === true);
+                    if (checked) setIsWeekdayGoal(false);
+                  }}
+                />
+                <label
+                  htmlFor="weekendGoal"
+                  className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Weekend Only
+                </label>
+                <span className="text-xs text-muted-foreground">(Sat & Sun)</span>
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Target End Date</label>

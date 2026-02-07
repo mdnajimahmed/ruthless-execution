@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,8 @@ export const GoalRowHeader = ({
   const [editTitle, setEditTitle] = useState(goal.title);
   const [editStartTime, setEditStartTime] = useState(goal.startTime);
   const [editEndTime, setEditEndTime] = useState(goal.endTime);
+  const [editIsWeekendGoal, setEditIsWeekendGoal] = useState(goal.isWeekendGoal || false);
+  const [editIsWeekdayGoal, setEditIsWeekdayGoal] = useState(goal.isWeekdayGoal || false);
   const [editTargetEndDate, setEditTargetEndDate] = useState<Date | undefined>(
     goal.targetEndDate ? parseISO(goal.targetEndDate) : undefined
   );
@@ -79,6 +82,8 @@ export const GoalRowHeader = ({
       startTime: editStartTime,
       endTime: editEndTime,
       allocatedMinutes: Math.max(0, allocatedMinutes),
+      isWeekendGoal: editIsWeekendGoal,
+      isWeekdayGoal: editIsWeekdayGoal,
       targetEndDate: editTargetEndDate ? format(editTargetEndDate, 'yyyy-MM-dd') : undefined,
     });
     setIsEditing(false);
@@ -88,6 +93,8 @@ export const GoalRowHeader = ({
     setEditTitle(goal.title);
     setEditStartTime(goal.startTime);
     setEditEndTime(goal.endTime);
+    setEditIsWeekendGoal(goal.isWeekendGoal || false);
+    setEditIsWeekdayGoal(goal.isWeekdayGoal || false);
     setEditTargetEndDate(goal.targetEndDate ? parseISO(goal.targetEndDate) : undefined);
     setIsEditing(true);
   };
@@ -101,9 +108,9 @@ export const GoalRowHeader = ({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-sm truncate">{goal.title}</h3>
-          {goal.isWeekendGoal && (
+          {(goal.isWeekendGoal || goal.isWeekdayGoal) && (
             <span className="inline-flex items-center rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground">
-              WE
+              {goal.isWeekendGoal ? 'WE' : 'WD'}
             </span>
           )}
         </div>
@@ -180,6 +187,39 @@ export const GoalRowHeader = ({
                   onChange={(e) => setEditEndTime(e.target.value)}
                   className="font-mono"
                 />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Goal Scope</label>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="editWeekdayGoal"
+                    checked={editIsWeekdayGoal}
+                    onCheckedChange={(checked) => {
+                      setEditIsWeekdayGoal(checked === true);
+                      if (checked) setEditIsWeekendGoal(false);
+                    }}
+                  />
+                  <label htmlFor="editWeekdayGoal" className="text-sm leading-none">
+                    Weekday Only
+                  </label>
+                  <span className="text-xs text-muted-foreground">(Mon–Fri)</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="editWeekendGoal"
+                    checked={editIsWeekendGoal}
+                    onCheckedChange={(checked) => {
+                      setEditIsWeekendGoal(checked === true);
+                      if (checked) setEditIsWeekdayGoal(false);
+                    }}
+                  />
+                  <label htmlFor="editWeekendGoal" className="text-sm leading-none">
+                    Weekend Only
+                  </label>
+                  <span className="text-xs text-muted-foreground">(Sat & Sun)</span>
+                </div>
               </div>
             </div>
             <div className="space-y-2">

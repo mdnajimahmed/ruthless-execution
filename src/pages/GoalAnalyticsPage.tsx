@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
+import { isGoalActiveOnDay } from '@/types/goals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -27,13 +28,12 @@ const GoalAnalyticsPage = () => {
     if (!goalId) return [];
     
     const today = new Date();
-    const isWeekendGoal = goal?.isWeekendGoal || false;
     const result: { date: string; dateStr: string; dayName: string; status: 'hit' | 'miss' | 'partial' | 'pending' | 'none'; reason?: string; disabled?: boolean }[] = [];
     
     for (let i = 19; i >= 0; i--) {
       const date = subDays(today, i);
       const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isActive = goal ? isGoalActiveOnDay(goal, dayOfWeek) : true;
       const dateStr = format(date, 'yyyy-MM-dd');
       const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
       
@@ -41,9 +41,9 @@ const GoalAnalyticsPage = () => {
         date: dateStr,
         dateStr: format(date, 'd'),
         dayName: format(date, 'EEE'),
-        status: (isWeekendGoal && !isWeekend) ? 'none' : (entry?.status || 'none'),
+        status: !isActive ? 'none' : (entry?.status || 'none'),
         reason: entry?.missedReason,
-        disabled: isWeekendGoal && !isWeekend,
+        disabled: !isActive,
       });
     }
     
@@ -92,7 +92,6 @@ const GoalAnalyticsPage = () => {
     if (!goalId) return { consecutiveMisses: 0, lastHitDaysAgo: null, recentReasons: [] };
     
     const today = new Date();
-    const isWeekendGoal = goal?.isWeekendGoal || false;
     let consecutiveMisses = 0;
     let lastHitDaysAgo: number | null = null;
     const recentReasonsSet: string[] = [];
@@ -101,10 +100,9 @@ const GoalAnalyticsPage = () => {
     for (let i = 0; i < 90; i++) {
       const date = subDays(today, i);
       const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       
-      // Skip weekdays for weekend goals
-      if (isWeekendGoal && !isWeekend) continue;
+      // Skip inactive days for scoped goals
+      if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
       
       const dateStr = format(date, 'yyyy-MM-dd');
       const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
@@ -127,8 +125,7 @@ const GoalAnalyticsPage = () => {
       for (let i = 0; i < 365; i++) {
         const date = subDays(today, i);
         const dayOfWeek = date.getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        if (isWeekendGoal && !isWeekend) continue;
+        if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
         
         const dateStr = format(date, 'yyyy-MM-dd');
         const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);

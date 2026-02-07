@@ -8,6 +8,7 @@ import {
   TimeBlock,
   GoalAnalytics,
   MonthAnalytics,
+  isGoalActiveOnDay,
 } from '@/types/goals';
 import { generateSeedData } from '@/lib/seedData';
 
@@ -240,13 +241,14 @@ export const useGoalTracker = () => {
     const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
     const lastDay = isCurrentMonth ? Math.min(today.getDate(), daysInMonth) : daysInMonth;
 
-    // For weekend goals, only count weekend days
+    // For scoped goals, only count active days
     const isWeekendGoal = goal?.isWeekendGoal || false;
+    const isWeekdayGoal = goal?.isWeekdayGoal || false;
     let effectiveDays = 0;
     for (let day = 1; day <= lastDay; day++) {
       const date = new Date(currentYear, currentMonth, day);
       const dayOfWeek = date.getDay();
-      if (isWeekendGoal && dayOfWeek !== 0 && dayOfWeek !== 6) continue;
+      if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
       effectiveDays++;
     }
 
@@ -262,7 +264,7 @@ export const useGoalTracker = () => {
     for (let day = 1; day <= lastDay; day++) {
       const date = new Date(currentYear, currentMonth, day);
       const dayOfWeek = date.getDay();
-      if (isWeekendGoal && dayOfWeek !== 0 && dayOfWeek !== 6) continue;
+      if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
 
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const entry = entries.find((e) => e.date === dateStr);
