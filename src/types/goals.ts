@@ -8,7 +8,16 @@ export interface Goal {
   createdAt: string;
   targetEndDate?: string; // "2025-03-15" format - when goal should be completed
   isWeekendGoal?: boolean; // If true, only weekends (Sat/Sun) are active
+  isWeekdayGoal?: boolean; // If true, only weekdays (Mon-Fri) are active
 }
+
+/** Check if a goal is active on a given day of the week (0=Sun, 6=Sat) */
+export const isGoalActiveOnDay = (goal: Goal, dayOfWeek: number): boolean => {
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  if (goal.isWeekendGoal && !isWeekend) return false;
+  if (goal.isWeekdayGoal && isWeekend) return false;
+  return true;
+};
 
 export type DayStatus = 'hit' | 'miss' | 'partial';
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, isToday, isBefore, startOfDay, subDays, addDays } from 'date-fns';
+import { isGoalActiveOnDay } from '@/types/goals';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { GoalRowHeader } from './GoalRowHeader';
 import { DayCell } from './DayCell';
@@ -230,15 +231,15 @@ export const GoalGrid = () => {
                     const info = getDayInfo(date);
                     const entry = getEntry(goal.id, info.date);
                     const dayOfWeek = date.getDay();
-                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                    const isDisabledForGoal = goal.isWeekendGoal && !isWeekend;
+                    const isDisabledForGoal = !isGoalActiveOnDay(goal, dayOfWeek);
                     
                     if (isDisabledForGoal) {
+                      const scopeLabel = goal.isWeekendGoal ? 'Weekend goal — not active on weekdays' : 'Weekday goal — not active on weekends';
                       return (
                         <div
                           key={info.date}
                           className="grid-cell relative flex flex-col items-center justify-center gap-0.5 min-h-[56px] flex-1 min-w-[60px] bg-muted/20 opacity-30 cursor-not-allowed"
-                          title="Weekend goal — not active on weekdays"
+                          title={scopeLabel}
                         >
                           <span className="text-[10px] text-muted-foreground">—</span>
                         </div>
