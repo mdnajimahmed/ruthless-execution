@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { GoalGrid } from '@/components/GoalGrid';
 import { Button } from '@/components/ui/button';
-import { ClipboardList, CheckSquare } from 'lucide-react';
+import { ClipboardList, CheckSquare, LayoutGrid } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -22,6 +22,12 @@ const Index = () => {
             <Link to="/completed">
               <CheckSquare className="h-4 w-4 mr-1" />
               Completed
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/eisenhower">
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Eisenhower
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
