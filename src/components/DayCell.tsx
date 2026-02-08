@@ -56,7 +56,12 @@ export const DayCell = ({
   };
 
   const handleStatusChange = (newStatus: DayStatus) => {
-    onUpdateEntry({ status: newStatus });
+    if (newStatus === 'miss') {
+      setActualMinutes(0);
+      onUpdateEntry({ status: newStatus, actualMinutes: 0 });
+    } else {
+      onUpdateEntry({ status: newStatus });
+    }
   };
 
   return (
@@ -111,20 +116,22 @@ export const DayCell = ({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="actualMinutes">Actual Time (minutes)</Label>
-              <Input
-                id="actualMinutes"
-                type="number"
-                min={0}
-                value={actualMinutes}
-                onChange={(e) => setActualMinutes(Number(e.target.value))}
-                className="font-mono"
-              />
-              <p className="text-xs text-muted-foreground">
-                Allocated: {goal.allocatedMinutes} min ({goal.startTime} - {goal.endTime})
-              </p>
-            </div>
+            {status !== 'miss' && (
+              <div className="space-y-2">
+                <Label htmlFor="actualMinutes">Actual Time (minutes)</Label>
+                <Input
+                  id="actualMinutes"
+                  type="number"
+                  min={0}
+                  value={actualMinutes}
+                  onChange={(e) => setActualMinutes(Number(e.target.value))}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Allocated: {goal.allocatedMinutes} min ({goal.startTime} - {goal.endTime})
+                </p>
+              </div>
+            )}
 
             {status === 'miss' && (
               <div className="space-y-2">
