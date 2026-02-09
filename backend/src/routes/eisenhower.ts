@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import prisma from '../config/database.js';
 import { z } from 'zod';
+import { authenticateToken, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 const eisenhowerTaskSchema = z.object({
   title: z.string().min(1),
@@ -14,9 +18,11 @@ const eisenhowerTaskSchema = z.object({
 const updateEisenhowerTaskSchema = eisenhowerTaskSchema.partial();
 
 // Get all tasks
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthRequest, res) => {
   const { quadrant, completed } = req.query;
-  const where: any = {};
+  const where: any = {
+    userId: req.userId!, // CRITICAL: Only user's tasks
+  };
   
   if (quadrant) {
     where.quadrant = quadrant;
@@ -39,10 +45,13 @@ router.get('/', async (req, res) => {
 });
 
 // Get task by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const task = await prisma.eisenhowerTask.findUnique({
-    where: { id },
+  const task = await prisma.eisenhowerTask.findFirst({
+    where: { 
+      id,
+      userId: req.userId!, // CRITICAL: Verify ownership
+    },
   });
   if (!task) {
     return res.status(404).json({ error: 'Task not found' });
@@ -51,17 +60,30 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create task
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthRequest, res) => {
   const data = eisenhowerTaskSchema.parse(req.body);
   const task = await prisma.eisenhowerTask.create({
-    data,
+    data: {
+      ...data,
+      userId: req.userId!, // CRITICAL: Set userId
+    },
   });
   res.status(201).json(task);
 });
 
 // Update task
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  // Verify ownership
+  const existing = await prisma.eisenhowerTask.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
   const data = updateEisenhowerTaskSchema.parse(req.body);
   const task = await prisma.eisenhowerTask.update({
     where: { id },
@@ -71,8 +93,17 @@ router.put('/:id', async (req, res) => {
 });
 
 // Complete task
-router.post('/:id/complete', async (req, res) => {
+router.post('/:id/complete', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.eisenhowerTask.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
   const task = await prisma.eisenhowerTask.update({
     where: { id },
     data: { completedAt: new Date() },
@@ -81,8 +112,17 @@ router.post('/:id/complete', async (req, res) => {
 });
 
 // Uncomplete task
-router.post('/:id/uncomplete', async (req, res) => {
+router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.eisenhowerTask.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
   const task = await prisma.eisenhowerTask.update({
     where: { id },
     data: { completedAt: null },
@@ -91,8 +131,17 @@ router.post('/:id/uncomplete', async (req, res) => {
 });
 
 // Move task to different quadrant
-router.post('/:id/move', async (req, res) => {
+router.post('/:id/move', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.eisenhowerTask.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
   const { quadrant } = z.object({
     quadrant: z.enum(['do-first', 'schedule', 'delegate', 'eliminate']),
   }).parse(req.body);
@@ -105,8 +154,17 @@ router.post('/:id/move', async (req, res) => {
 });
 
 // Delete task
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.eisenhowerTask.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
   await prisma.eisenhowerTask.delete({
     where: { id },
   });

@@ -46,12 +46,22 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const url = `${apiConfig.baseURL}${endpoint}`;
   
+  // Get token from localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
   const config: RequestInit = {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   };
 
   try {
@@ -59,6 +69,16 @@ export async function apiRequest<T>(
     return handleResponse<T>(response);
   } catch (error) {
     if (error instanceof ApiError) {
+      // If unauthorized, clear token and redirect to login
+      if (error.status === 401 || error.status === 403) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token');
+          // Only redirect if not already on login page
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+      }
       throw error;
     }
     throw new ApiError(

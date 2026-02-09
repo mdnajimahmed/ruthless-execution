@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import prisma from '../config/database.js';
 import { z } from 'zod';
+import { authenticateToken, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 const dayEntrySchema = z.object({
   goalId: z.string().uuid(),
@@ -23,8 +27,18 @@ const dayEntrySchema = z.object({
 const updateDayEntrySchema = dayEntrySchema.partial().omit({ goalId: true, date: true });
 
 // Get all day entries for a goal
-router.get('/goal/:goalId', async (req, res) => {
+router.get('/goal/:goalId', async (req: AuthRequest, res) => {
   const { goalId } = req.params;
+  
+  // Verify user owns the goal
+  const goal = await prisma.goal.findFirst({
+    where: { id: goalId, userId: req.userId! },
+  });
+  
+  if (!goal) {
+    return res.status(404).json({ error: 'Goal not found' });
+  }
+  
   const entries = await prisma.dayEntry.findMany({
     where: { goalId },
     orderBy: { date: 'desc' },
@@ -33,10 +47,15 @@ router.get('/goal/:goalId', async (req, res) => {
 });
 
 // Get day entry by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const entry = await prisma.dayEntry.findUnique({
-    where: { id },
+  const entry = await prisma.dayEntry.findFirst({
+    where: { 
+      id,
+      goal: {
+        userId: req.userId!, // Ensure user owns the goal
+      },
+    },
     include: { goal: true },
   });
   if (!entry) {
@@ -46,13 +65,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // Get day entries by date range
-router.get('/date/:startDate/:endDate', async (req, res) => {
+router.get('/date/:startDate/:endDate', async (req: AuthRequest, res) => {
   const { startDate, endDate } = req.params;
   const entries = await prisma.dayEntry.findMany({
     where: {
       date: {
         gte: startDate,
         lte: endDate,
+      },
+      goal: {
+        userId: req.userId!, // Only entries for user's goals
       },
     },
     include: { goal: true },
@@ -62,8 +84,18 @@ router.get('/date/:startDate/:endDate', async (req, res) => {
 });
 
 // Create or update day entry
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthRequest, res) => {
   const data = dayEntrySchema.parse(req.body);
+  
+  // Verify user owns the goal
+  const goal = await prisma.goal.findFirst({
+    where: { id: data.goalId, userId: req.userId! },
+  });
+  
+  if (!goal) {
+    return res.status(404).json({ error: 'Goal not found' });
+  }
+  
   const entry = await prisma.dayEntry.upsert({
     where: {
       goalId_date: {
@@ -87,8 +119,23 @@ router.post('/', async (req, res) => {
 });
 
 // Update day entry
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  // Verify user owns the entry's goal
+  const existing = await prisma.dayEntry.findFirst({
+    where: {
+      id,
+      goal: {
+        userId: req.userId!,
+      },
+    },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Day entry not found' });
+  }
+  
   const data = updateDayEntrySchema.parse(req.body);
   const entry = await prisma.dayEntry.update({
     where: { id },
@@ -101,8 +148,23 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete day entry
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  // Verify user owns the entry's goal
+  const existing = await prisma.dayEntry.findFirst({
+    where: {
+      id,
+      goal: {
+        userId: req.userId!,
+      },
+    },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Day entry not found' });
+  }
+  
   await prisma.dayEntry.delete({
     where: { id },
   });

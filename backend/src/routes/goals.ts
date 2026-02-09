@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import prisma from '../config/database.js';
 import { z } from 'zod';
+import { authenticateToken, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 const goalSchema = z.object({
   title: z.string().min(1),
@@ -18,8 +22,9 @@ const goalSchema = z.object({
 const updateGoalSchema = goalSchema.partial();
 
 // Get all goals
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthRequest, res) => {
   const goals = await prisma.goal.findMany({
+    where: { userId: req.userId! },
     orderBy: { createdAt: 'desc' },
     include: {
       dayEntries: {
@@ -32,10 +37,13 @@ router.get('/', async (req, res) => {
 });
 
 // Get goal by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const goal = await prisma.goal.findUnique({
-    where: { id },
+  const goal = await prisma.goal.findFirst({
+    where: { 
+      id,
+      userId: req.userId!, // Ensure user owns this goal
+    },
     include: {
       dayEntries: {
         orderBy: { date: 'desc' },
@@ -49,17 +57,30 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create goal
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthRequest, res) => {
   const data = goalSchema.parse(req.body);
   const goal = await prisma.goal.create({
-    data,
+    data: {
+      ...data,
+      userId: req.userId!, // Ensure userId is set
+    },
   });
   res.status(201).json(goal);
 });
 
 // Update goal
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  // First verify user owns this goal
+  const existing = await prisma.goal.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Goal not found' });
+  }
+  
   const data = updateGoalSchema.parse(req.body);
   const goal = await prisma.goal.update({
     where: { id },
@@ -69,8 +90,18 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete goal
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  // First verify user owns this goal
+  const existing = await prisma.goal.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Goal not found' });
+  }
+  
   await prisma.goal.delete({
     where: { id },
   });

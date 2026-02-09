@@ -1,5 +1,6 @@
-import { Target, LayoutGrid, Telescope } from 'lucide-react';
+import { Target, LayoutGrid, Telescope, LogOut, User } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarContent,
@@ -10,8 +11,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 
 const navItems = [
   { title: 'Execution', url: '/', icon: Target },
@@ -21,6 +24,7 @@ const navItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const { user, logout } = useAuth();
   const isCollapsed = state === 'collapsed';
 
   return (
@@ -62,6 +66,32 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border p-2">
+        <div className="space-y-1">
+          {!isCollapsed && user && (
+            <div className="px-2 py-1.5 text-xs text-sidebar-foreground/60">
+              <div className="flex items-center gap-2">
+                <User className="h-3 w-3" />
+                <span className="truncate">{user.username}</span>
+              </div>
+            </div>
+          )}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={logout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  {!isCollapsed && <span>Logout</span>}
+                </Button>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

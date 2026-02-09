@@ -10,8 +10,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                String          @id @default(uuid())
+  username          String          @unique
+  email             String?         @unique
+  passwordHash      String
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  goals             Goal[]
+  eisenhowerTasks   EisenhowerTask[]
+  backlogItems      BacklogItem[]
+  
+  @@index([username])
+  @@index([email])
+}
+
 model Goal {
   id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title           String
   startTime       String    // "07:00" format
   endTime         String    // "07:30" format
@@ -23,6 +42,7 @@ model Goal {
   isWeekdayGoal  Boolean   @default(false)
   dayEntries      DayEntry[]
   
+  @@index([userId])
   @@index([createdAt])
 }
 
@@ -46,6 +66,8 @@ model DayEntry {
 
 model EisenhowerTask {
   id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   description String?
   quadrant    String   // 'do-first' | 'schedule' | 'delegate' | 'eliminate'
@@ -54,12 +76,15 @@ model EisenhowerTask {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  @@index([userId])
   @@index([quadrant])
   @@index([completedAt])
 }
 
 model BacklogItem {
   id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title             String
   description       String?
   category          String    // 'certifications' | 'udemy' | 'books' | 'interview' | 'concepts'
@@ -70,6 +95,7 @@ model BacklogItem {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
+  @@index([userId])
   @@index([category])
   @@index([priority])
   @@index([completedAt])

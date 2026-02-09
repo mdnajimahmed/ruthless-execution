@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import prisma from '../config/database.js';
 import { z } from 'zod';
+import { authenticateToken, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 const backlogItemSchema = z.object({
   title: z.string().min(1),
@@ -16,9 +20,11 @@ const backlogItemSchema = z.object({
 const updateBacklogItemSchema = backlogItemSchema.partial();
 
 // Get all backlog items
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthRequest, res) => {
   const { category, priority, completed } = req.query;
-  const where: any = {};
+  const where: any = {
+    userId: req.userId!, // CRITICAL: Only user's items
+  };
   
   if (category) {
     where.category = category;
@@ -46,10 +52,13 @@ router.get('/', async (req, res) => {
 });
 
 // Get backlog item by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const item = await prisma.backlogItem.findUnique({
-    where: { id },
+  const item = await prisma.backlogItem.findFirst({
+    where: { 
+      id,
+      userId: req.userId!, // CRITICAL: Verify ownership
+    },
   });
   if (!item) {
     return res.status(404).json({ error: 'Backlog item not found' });
@@ -58,17 +67,29 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create backlog item
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthRequest, res) => {
   const data = backlogItemSchema.parse(req.body);
   const item = await prisma.backlogItem.create({
-    data,
+    data: {
+      ...data,
+      userId: req.userId!, // CRITICAL: Set userId
+    },
   });
   res.status(201).json(item);
 });
 
 // Update backlog item
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.backlogItem.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Backlog item not found' });
+  }
+  
   const data = updateBacklogItemSchema.parse(req.body);
   const item = await prisma.backlogItem.update({
     where: { id },
@@ -78,8 +99,17 @@ router.put('/:id', async (req, res) => {
 });
 
 // Complete backlog item
-router.post('/:id/complete', async (req, res) => {
+router.post('/:id/complete', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.backlogItem.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Backlog item not found' });
+  }
+  
   const item = await prisma.backlogItem.update({
     where: { id },
     data: { completedAt: new Date() },
@@ -88,8 +118,17 @@ router.post('/:id/complete', async (req, res) => {
 });
 
 // Uncomplete backlog item
-router.post('/:id/uncomplete', async (req, res) => {
+router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.backlogItem.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Backlog item not found' });
+  }
+  
   const item = await prisma.backlogItem.update({
     where: { id },
     data: { completedAt: null },
@@ -98,8 +137,17 @@ router.post('/:id/uncomplete', async (req, res) => {
 });
 
 // Delete backlog item
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: AuthRequest, res) => {
   const { id } = req.params;
+  
+  const existing = await prisma.backlogItem.findFirst({
+    where: { id, userId: req.userId! },
+  });
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Backlog item not found' });
+  }
+  
   await prisma.backlogItem.delete({
     where: { id },
   });

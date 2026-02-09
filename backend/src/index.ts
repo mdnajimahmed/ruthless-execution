@@ -17,6 +17,11 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
+// JWT Secret (should be in environment variable in production)
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('WARNING: JWT_SECRET not set in production!');
+}
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
