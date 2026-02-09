@@ -23,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { RAGBadge } from './StatusIndicator';
 import { 
   MoreVertical, 
   Pencil, 
@@ -32,6 +31,8 @@ import {
   TrendingUp,
   BarChart3,
   CalendarIcon,
+  CheckCircle2,
+  Circle,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
@@ -39,6 +40,8 @@ interface GoalRowHeaderProps {
   goal: Goal;
   analytics: GoalAnalytics;
   onUpdate: (updates: Partial<Goal>) => void;
+  onComplete?: () => void;
+  onUncomplete?: () => void;
   onDelete: () => void;
   onViewAnalytics?: () => void;
 }
@@ -58,6 +61,8 @@ export const GoalRowHeader = ({
   goal,
   analytics,
   onUpdate,
+  onComplete,
+  onUncomplete,
   onDelete,
   onViewAnalytics,
 }: GoalRowHeaderProps) => {
@@ -103,11 +108,22 @@ export const GoalRowHeader = ({
                     analytics.completionRate >= 50 ? 'partial' : 
                     analytics.completionRate > 0 ? 'miss' : 'pending';
 
+  const isCompleted = !!goal.completedAt;
+
   return (
-    <div className="sticky left-0 z-10 flex items-center gap-3 border-r border-b border-grid-border bg-card px-3 py-2 w-[280px] shrink-0">
+    <div className={cn(
+      "sticky left-0 z-10 flex items-center gap-3 border-r border-b border-grid-border px-3 py-2 w-[280px] shrink-0",
+      isCompleted ? "bg-muted/30" : "bg-card"
+    )}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="font-medium text-sm truncate">{goal.title}</h3>
+          {isCompleted && (
+            <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+          )}
+          <h3 className={cn(
+            "font-medium text-sm truncate",
+            isCompleted && "line-through text-muted-foreground"
+          )}>{goal.title}</h3>
           {(goal.isWeekendGoal || goal.isWeekdayGoal) && (
             <span className="inline-flex items-center rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground">
               {goal.isWeekendGoal ? 'WE' : 'WD'}
@@ -147,6 +163,21 @@ export const GoalRowHeader = ({
               <BarChart3 className="mr-2 h-4 w-4" />
               View Analytics
             </DropdownMenuItem>
+          )}
+          {goal.completedAt ? (
+            onUncomplete && (
+              <DropdownMenuItem onClick={onUncomplete}>
+                <Circle className="mr-2 h-4 w-4" />
+                Uncomplete
+              </DropdownMenuItem>
+            )
+          ) : (
+            onComplete && (
+              <DropdownMenuItem onClick={onComplete}>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Complete
+              </DropdownMenuItem>
+            )
           )}
           <DropdownMenuItem onClick={onDelete} className="text-destructive">
             <Trash2 className="mr-2 h-4 w-4" />

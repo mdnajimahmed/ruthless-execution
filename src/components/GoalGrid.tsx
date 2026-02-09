@@ -8,13 +8,16 @@ import { DayCell } from './DayCell';
 import { AddGoalDialog, AddGoalButton } from './AddGoalDialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-export const GoalGrid = () => {
+interface GoalGridProps {
+  showCompleted?: boolean; // If true, show only completed goals; if false, show only in-progress
+}
+
+export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const {
@@ -23,6 +26,8 @@ export const GoalGrid = () => {
     monthData,
     addGoal,
     updateGoal,
+    completeGoal,
+    uncompleteGoal,
     deleteGoal,
     getEntry,
     updateEntry,
@@ -174,7 +179,19 @@ export const GoalGrid = () => {
 
           {/* Goal rows */}
           {[...monthData.goals]
+            .filter((goal) => {
+              // Filter by completion status
+              if (showCompleted) {
+                return !!goal.completedAt;
+              } else {
+                return !goal.completedAt;
+              }
+            })
             .sort((a, b) => {
+              // Sort completed goals by completion date (newest first), in-progress by start time
+              if (showCompleted && a.completedAt && b.completedAt) {
+                return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+              }
               const startCompare = a.startTime.localeCompare(b.startTime);
               if (startCompare !== 0) return startCompare;
               return a.endTime.localeCompare(b.endTime);
@@ -188,6 +205,8 @@ export const GoalGrid = () => {
                   goal={goal}
                   analytics={analytics}
                   onUpdate={(updates) => updateGoal(goal.id, updates)}
+                  onComplete={() => completeGoal(goal.id)}
+                  onUncomplete={() => uncompleteGoal(goal.id)}
                   onDelete={() => deleteGoal(goal.id)}
                   onViewAnalytics={() => navigate(`/goal-analytics/${goal.id}`)}
                 />
@@ -232,11 +251,29 @@ export const GoalGrid = () => {
             );
           })}
 
-          {/* Add goal row */}
-          <div className="flex">
-            <AddGoalButton onClick={() => setIsAddingGoal(true)} />
-            <div className="flex-1 border-b border-dashed border-grid-border" />
-          </div>
+          {/* Show empty state if no goals */}
+          {monthData.goals.filter((goal) => showCompleted ? !!goal.completedAt : !goal.completedAt).length === 0 && (
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <div className="text-center">
+                <p className="text-sm">
+                  {showCompleted ? 'No completed goals yet' : 'No goals yet'}
+                </p>
+                <p className="text-xs mt-1">
+                  {showCompleted 
+                    ? 'Complete a goal to see it here' 
+                    : 'Click "Add Goal" to get started'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Add goal row - only show for in-progress goals */}
+          {!showCompleted && (
+            <div className="flex">
+              <AddGoalButton onClick={() => setIsAddingGoal(true)} />
+              <div className="flex-1 border-b border-dashed border-grid-border" />
+            </div>
+          )}
         </div>
       </div>
 

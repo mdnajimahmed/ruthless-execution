@@ -3,22 +3,22 @@ import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
   userId?: string;
-  username?: string;
+  email?: string;
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
 
-export function generateToken(userId: string, username: string): string {
+export function generateToken(userId: string, email: string): string {
   return jwt.sign(
-    { userId, username },
+    { userId, email },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
 }
 
-export function verifyToken(token: string): { userId: string; username: string } | null {
+export function verifyToken(token: string): { userId: string; email: string } | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
     return decoded;
   } catch (error) {
     return null;
@@ -45,6 +45,6 @@ export function authenticateToken(
   }
 
   req.userId = decoded.userId;
-  req.username = decoded.username;
+  req.email = decoded.email;
   next();
 }

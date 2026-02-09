@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -40,8 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (username: string, password: string) => {
-    const response = await authApi.login({ username, password });
+  const login = async (email: string, password: string) => {
+    const response = await authApi.login({ email, password });
     tokenStorage.set(response.token);
     setUser(response.user);
   };

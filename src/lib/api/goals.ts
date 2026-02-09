@@ -29,6 +29,8 @@ export const goalsApi = {
   },
   create: (goal: Omit<Goal, 'id' | 'createdAt'>) => api.post<Goal>('/goals', goal),
   update: (id: string, updates: Partial<Goal>) => api.put<Goal>(`/goals/${id}`, updates),
+  complete: (id: string) => api.post<Goal>(`/goals/${id}/complete`),
+  uncomplete: (id: string) => api.post<Goal>(`/goals/${id}/uncomplete`),
   delete: (id: string) => api.delete<void>(`/goals/${id}`),
 
   // Day Entries

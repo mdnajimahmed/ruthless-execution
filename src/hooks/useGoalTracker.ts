@@ -70,6 +70,22 @@ export const useGoalTracker = () => {
     },
   });
 
+  // Complete goal mutation
+  const completeGoalMutation = useMutation({
+    mutationFn: goalsApi.complete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+    },
+  });
+
+  // Uncomplete goal mutation
+  const uncompleteGoalMutation = useMutation({
+    mutationFn: goalsApi.uncomplete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+    },
+  });
+
   // Delete goal mutation
   const deleteGoalMutation = useMutation({
     mutationFn: goalsApi.delete,
@@ -136,6 +152,20 @@ export const useGoalTracker = () => {
       return updateGoalMutation.mutateAsync({ id: goalId, updates });
     },
     [updateGoalMutation]
+  );
+
+  const completeGoal = useCallback(
+    async (goalId: string) => {
+      return completeGoalMutation.mutateAsync(goalId);
+    },
+    [completeGoalMutation]
+  );
+
+  const uncompleteGoal = useCallback(
+    async (goalId: string) => {
+      return uncompleteGoalMutation.mutateAsync(goalId);
+    },
+    [uncompleteGoalMutation]
   );
 
   const deleteGoal = useCallback(
@@ -422,6 +452,8 @@ export const useGoalTracker = () => {
     // Goal operations
     addGoal,
     updateGoal,
+    completeGoal,
+    uncompleteGoal,
     deleteGoal,
 
     // Entry operations

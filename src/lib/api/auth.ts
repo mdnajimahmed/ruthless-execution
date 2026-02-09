@@ -1,14 +1,13 @@
 import { api } from './config';
 
 export interface LoginCredentials {
-  username: string;
+  email: string;
   password: string;
 }
 
 export interface User {
   id: string;
-  username: string;
-  email?: string;
+  email: string;
 }
 
 export interface AuthResponse {
@@ -22,8 +21,8 @@ export const authApi = {
   
   verify: () => api.get<{ user: User }>('/auth/verify'),
   
-  forgotPassword: (username: string) =>
-    api.post<{ message: string }>('/auth/forgot-password', { username }),
+  forgotPassword: (email: string) =>
+    api.post<{ message: string }>('/auth/forgot-password', { email }),
   
   resetPassword: (token: string, newPassword: string) =>
     api.post<{ message: string }>('/auth/reset-password', { token, newPassword }),

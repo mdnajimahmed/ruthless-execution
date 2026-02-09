@@ -43,8 +43,16 @@ echo "🔧 Generating Prisma client..."
 echo "🗄️  Syncing database schema..."
 (cd backend && npx prisma db push)
 
+# Kill any process using port 3002
+echo "🔍 Checking port 3002..."
+if lsof -ti:3002 > /dev/null 2>&1; then
+  echo "⚠️  Port 3002 is in use. Killing existing process..."
+  lsof -ti:3002 | xargs kill -9 2>/dev/null || true
+  sleep 1
+fi
+
 # Start backend in development mode
-echo "🔧 Starting backend server..."
+echo "🔧 Starting backend server on port 3002..."
 (cd backend && npm run dev) &
 BACKEND_PID=$!
 
@@ -67,6 +75,6 @@ echo ""
 echo "Press Ctrl+C to stop all services..."
 
 # Wait for user interrupt
-trap "echo ''; echo '🛑 Stopping services...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; docker-compose down; exit" INT TERM
+trap "echo ''; echo '🛑 Stopping services...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; lsof -ti:3002 | xargs kill -9 2>/dev/null || true; docker-compose down; exit" INT TERM
 
 wait

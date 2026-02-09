@@ -15,7 +15,9 @@
     "lint": "eslint src --ext .ts",
     "test": "vitest",
     "build:lambda": "./scripts/build-for-lambda.sh",
-    "create-user": "tsx src/scripts/create-user.ts"
+    "create-user": "tsx src/scripts/create-user.ts",
+    "clean-users": "tsx src/scripts/clean-users.ts",
+    "test-login": "bash scripts/test-login.sh"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

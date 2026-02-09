@@ -7,7 +7,7 @@ import { z } from 'zod';
 const router = Router();
 
 const loginSchema = z.object({
-  username: z.string().min(1),
+  email: z.string().email(),
   password: z.string().min(1),
 });
 
@@ -16,31 +16,30 @@ const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-// Login
+// Login (email + password only)
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = loginSchema.parse(req.body);
+    const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { email: email.trim().toLowerCase() },
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid username or password' });
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid username or password' });
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = generateToken(user.id, user.username);
+    const token = generateToken(user.id, user.email);
 
     res.json({
       token,
       user: {
         id: user.id,
-        username: user.username,
         email: user.email,
       },
     });
@@ -56,15 +55,14 @@ router.post('/login', async (req, res) => {
 // Request password reset
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { username } = z.object({ username: z.string() }).parse(req.body);
+    const { email } = z.object({ email: z.string().email() }).parse(req.body);
 
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { email: email.trim().toLowerCase() },
     });
 
     // Don't reveal if user exists or not for security
     if (user) {
-      // Generate reset token (simple UUID-based token)
       const crypto = await import('crypto');
       const resetToken = crypto.randomBytes(32).toString('hex');
       const resetTokenExpiry = new Date();
@@ -79,12 +77,10 @@ router.post('/forgot-password', async (req, res) => {
       });
 
       // In production, send email with reset token
-      // For now, return token (remove in production!)
-      console.log(`Password reset token for ${username}: ${resetToken}`);
+      console.log(`Password reset token for ${user.email}: ${resetToken}`);
     }
 
-    // Always return success to prevent username enumeration
-    res.json({ message: 'If the username exists, a password reset token has been generated' });
+    res.json({ message: 'If the email exists, a password reset token has been generated' });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -150,7 +146,6 @@ router.get('/verify', async (req, res) => {
     where: { id: decoded.userId },
     select: {
       id: true,
-      username: true,
       email: true,
     },
   });

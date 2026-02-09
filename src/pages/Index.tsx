@@ -36,15 +36,11 @@ const Index = () => {
         </div>
 
         <TabsContent value="in-progress" className="flex-1 overflow-hidden mt-0">
-          <GoalGrid />
+          <GoalGrid showCompleted={false} />
         </TabsContent>
 
         <TabsContent value="completed" className="flex-1 overflow-hidden mt-0">
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-            <Target className="h-12 w-12 mb-3 opacity-30" />
-            <p className="text-sm">Goal execution completions</p>
-            <p className="text-xs mt-1 text-center">Goals that reach their target end date will appear here</p>
-          </div>
+          <GoalGrid showCompleted={true} />
         </TabsContent>
 
         <TabsContent value="analytics" className="flex-1 overflow-hidden mt-0">

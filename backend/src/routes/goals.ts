@@ -23,9 +23,21 @@ const updateGoalSchema = goalSchema.partial();
 
 // Get all goals
 router.get('/', async (req: AuthRequest, res) => {
+  const { completed } = req.query;
+  const where: any = { userId: req.userId! };
+  
+  // Filter by completion status if provided
+  if (completed === 'true') {
+    where.completedAt = { not: null };
+  } else if (completed === 'false') {
+    where.completedAt = null;
+  }
+  
   const goals = await prisma.goal.findMany({
-    where: { userId: req.userId! },
-    orderBy: { createdAt: 'desc' },
+    where,
+    orderBy: completed === 'true' 
+      ? [{ completedAt: 'desc' }, { createdAt: 'desc' }]
+      : { createdAt: 'desc' },
     include: {
       dayEntries: {
         orderBy: { date: 'desc' },
@@ -87,6 +99,64 @@ router.put('/:id', async (req: AuthRequest, res) => {
     data,
   });
   res.json(goal);
+});
+
+// Complete goal
+router.post('/:id/complete', async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify user owns this goal
+    const existing = await prisma.goal.findFirst({
+      where: { id, userId: req.userId! },
+    });
+    
+    if (!existing) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+    
+    const goal = await prisma.goal.update({
+      where: { id },
+      data: { completedAt: new Date() },
+    });
+    res.json(goal);
+  } catch (error: any) {
+    console.error('Error completing goal:', error);
+    res.status(500).json({ 
+      error: 'Failed to complete goal',
+      details: error.message,
+      code: error.code 
+    });
+  }
+});
+
+// Uncomplete goal
+router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify user owns this goal
+    const existing = await prisma.goal.findFirst({
+      where: { id, userId: req.userId! },
+    });
+    
+    if (!existing) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+    
+    const goal = await prisma.goal.update({
+      where: { id },
+      data: { completedAt: null },
+    });
+    res.json(goal);
+  } catch (error: any) {
+    console.error('Error uncompleting goal:', error);
+    res.status(500).json({ 
+      error: 'Failed to uncomplete goal',
+      details: error.message,
+      code: error.code 
+    });
+  }
 });
 
 // Delete goal

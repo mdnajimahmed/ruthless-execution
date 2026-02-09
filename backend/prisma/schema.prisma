@@ -12,8 +12,7 @@ datasource db {
 
 model User {
   id                String          @id @default(uuid())
-  username          String          @unique
-  email             String?         @unique
+  email             String          @unique
   passwordHash      String
   resetToken        String?
   resetTokenExpiry  DateTime?
@@ -23,7 +22,6 @@ model User {
   eisenhowerTasks   EisenhowerTask[]
   backlogItems      BacklogItem[]
   
-  @@index([username])
   @@index([email])
 }
 
@@ -40,10 +38,12 @@ model Goal {
   targetEndDate  String?   // "2025-03-15" format
   isWeekendGoal  Boolean   @default(false)
   isWeekdayGoal  Boolean   @default(false)
+  completedAt     DateTime? // When goal was completed
   dayEntries      DayEntry[]
   
   @@index([userId])
   @@index([createdAt])
+  @@index([completedAt])
 }
 
 model DayEntry {

@@ -9,6 +9,7 @@ export interface Goal {
   targetEndDate?: string; // "2025-03-15" format - when goal should be completed
   isWeekendGoal?: boolean; // If true, only weekends (Sat/Sun) are active
   isWeekdayGoal?: boolean; // If true, only weekdays (Mon-Fri) are active
+  completedAt?: string; // ISO date string when goal was completed
 }
 
 /** Check if a goal is active on a given day of the week (0=Sun, 6=Sat) */

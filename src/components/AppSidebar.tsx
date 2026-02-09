@@ -72,7 +72,7 @@ export function AppSidebar() {
             <div className="px-2 py-1.5 text-xs text-sidebar-foreground/60">
               <div className="flex items-center gap-2">
                 <User className="h-3 w-3" />
-                <span className="truncate">{user.username}</span>
+                <span className="truncate">{user.email}</span>
               </div>
             </div>
           )}
