@@ -17,14 +17,14 @@ export const goalsApi = {
     const goals = await api.get<Goal[]>('/goals');
     return goals.map(goal => ({
       ...goal,
-      dayEntries: goal.dayEntries?.map(parseDayEntry) || [],
+      dayEntries: (goal as any).dayEntries?.map(parseDayEntry) || [],
     }));
   },
   getById: async (id: string) => {
     const goal = await api.get<Goal>(`/goals/${id}`);
     return {
       ...goal,
-      dayEntries: goal.dayEntries?.map(parseDayEntry) || [],
+      dayEntries: (goal as any).dayEntries?.map(parseDayEntry) || [],
     };
   },
   create: (goal: Omit<Goal, 'id' | 'createdAt'>) => api.post<Goal>('/goals', goal),

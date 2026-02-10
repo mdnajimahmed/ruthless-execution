@@ -112,7 +112,7 @@ export const GoalRowHeader = ({
 
   return (
     <div className={cn(
-      "sticky left-0 z-10 flex items-center gap-3 border-r border-b border-grid-border px-3 py-2 w-[280px] shrink-0",
+      "sticky left-0 z-10 flex items-center gap-2 border-r border-b border-grid-border px-2 sm:px-3 py-2 w-[160px] sm:w-[220px] md:w-[280px] shrink-0",
       isCompleted ? "bg-muted/30" : "bg-card"
     )}>
       <div className="flex-1 min-w-0">
