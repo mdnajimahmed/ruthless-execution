@@ -41,13 +41,13 @@ export const BacklogColumn = ({ title, category, items, onUpdate, onDelete, onCo
   };
 
   return (
-    <div className="flex flex-col h-full min-w-[280px] max-w-[320px] flex-1">
-      <div className="flex items-center justify-between px-3 py-2 bg-muted rounded-t-lg border border-b-0">
-        <h3 className="font-semibold text-sm">{title}</h3>
-        <span className="text-xs bg-background px-2 py-0.5 rounded-full">{items.length}</span>
+    <div className="flex flex-col h-full w-[280px] min-w-[240px] sm:min-w-[260px] shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 bg-muted rounded-t-lg border border-b-0 shrink-0">
+        <h3 className="font-semibold text-sm truncate">{title}</h3>
+        <span className="text-xs bg-background px-2 py-0.5 rounded-full shrink-0">{items.length}</span>
       </div>
-      <ScrollArea className="flex-1 border rounded-b-lg bg-muted/30">
-        <div className="p-2 space-y-2" onDragEnd={handleDragEnd}>
+      <ScrollArea className="flex-1 min-h-0 border rounded-b-lg bg-muted/30">
+        <div className="p-2 space-y-2 min-w-0" onDragEnd={handleDragEnd}>
           {items.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">No items</p>
           ) : (
