@@ -172,44 +172,42 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart,
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, item.id)}
     >
-      <CardContent className="p-3 overflow-visible">
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex items-start gap-2 flex-1 min-w-0 overflow-hidden">
-            <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0', badge.bg, badge.text)}>
-              {badge.letter}
-            </div>
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <h4 className="font-medium text-sm truncate">{item.title}</h4>
-              {item.description && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-              )}
-              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground flex-wrap">
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{format(parseISO(item.tentativeStartDate), 'MMM d, yyyy')}</span>
-                </div>
-                {item.estimatedHours != null && (
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Clock className="h-3 w-3" />
-                    <span>{item.estimatedHours}h</span>
-                  </div>
-                )}
-              </div>
-            </div>
+      <CardContent className="p-3">
+        <div className="flex items-start gap-1.5 min-w-0">
+          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0', badge.bg, badge.text)}>
+            {badge.letter}
           </div>
-          <div className="flex gap-1 shrink-0 min-w-[88px]">
-            {onComplete && (
-              <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => onComplete(item.id)} title="Mark complete">
-                <CheckCircle2 className="h-3 w-3" />
-              </Button>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-sm truncate">{item.title}</h4>
+            {item.description && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
             )}
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setIsEditing(true)}>
-              <Pencil className="h-3 w-3" />
-            </Button>
-            <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => onDelete(item.id)}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 shrink-0" />
+                <span className="truncate">{format(parseISO(item.tentativeStartDate), 'MMM d')}</span>
+              </div>
+              {item.estimatedHours != null && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Clock className="h-3 w-3" />
+                  <span>{item.estimatedHours}h</span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-0.5 mt-1.5">
+              {onComplete && (
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={(e) => { e.stopPropagation(); onComplete(item.id); }} title="Mark complete">
+                  <CheckCircle2 className="h-3 w-3" />
+                </Button>
+              )}
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}>
+                <Pencil className="h-3 w-3" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>

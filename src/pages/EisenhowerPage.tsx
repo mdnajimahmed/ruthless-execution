@@ -129,8 +129,8 @@ const EisenhowerPage = () => {
             </div>
 
             {/* Grid - 2x2 on desktop, single column on mobile */}
-            <ScrollArea className="h-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-4 md:pl-8 md:pt-8 sm:grid-rows-2 sm:h-full">
+            <div className="h-full overflow-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-4 md:pl-8 md:pt-8 h-full" style={{ gridTemplateRows: 'repeat(2, minmax(250px, 1fr))' }}>
                 {QUADRANTS.map((q) => (
                   <EisenhowerQuadrantComponent
                     key={q}
@@ -145,7 +145,7 @@ const EisenhowerPage = () => {
                   />
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </TabsContent>
 

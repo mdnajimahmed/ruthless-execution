@@ -76,8 +76,8 @@ const BacklogPage = () => {
           </TabsList>
         </div>
 
-        <TabsContent value="in-progress" className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden p-4 mt-0">
-          <div className="flex gap-4 h-full w-max min-w-full pb-2">
+        <TabsContent value="in-progress" className="flex-1 min-h-0 overflow-auto p-4 mt-0">
+          <div className="flex gap-3 h-full min-w-0 pb-2">
             {BACKLOG_CATEGORIES.map((category) => (
               <BacklogColumn
                 key={category.key}
