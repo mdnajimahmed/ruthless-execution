@@ -8,27 +8,42 @@ GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "nosha")
 FE_TAG="fe-${DATETIME}-${GIT_SHA}"
 BE_TAG="be-${DATETIME}-${GIT_SHA}"
 
+# Multi-platform: linux/amd64 (Intel/AMD, Windows WSL2, Intel Mac), linux/arm64 (Apple Silicon, ARM servers)
+PLATFORMS="linux/amd64,linux/arm64"
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "🐳 Building and pushing Docker images..."
+# Ensure a buildx builder exists for multi-platform (create if missing)
+if ! docker buildx inspect multiarch &>/dev/null; then
+  echo "🔧 Creating buildx builder 'multiarch' for multi-platform builds..."
+  docker buildx create --name multiarch --use --driver docker-container || true
+fi
+docker buildx use multiarch 2>/dev/null || docker buildx use default
+
+echo "🐳 Building and pushing Docker images (${PLATFORMS})..."
 echo "   FE tag: $FE_TAG"
 echo "   BE tag: $BE_TAG"
 echo ""
 
-# Build and push backend
+# Build and push backend (multi-platform; --push writes manifest to registry)
 echo "📦 Building backend..."
-docker build -t "${IMAGE_BASE}:${BE_TAG}" -f backend/Dockerfile backend/
-echo "📤 Pushing ${IMAGE_BASE}:${BE_TAG}"
-docker push "${IMAGE_BASE}:${BE_TAG}"
+docker buildx build \
+  --platform "${PLATFORMS}" \
+  --tag "${IMAGE_BASE}:${BE_TAG}" \
+  --file backend/Dockerfile \
+  --push \
+  backend/
 
 # Build and push frontend (API URL for local docker-compose)
 echo "📦 Building frontend..."
-docker build -t "${IMAGE_BASE}:${FE_TAG}" \
+docker buildx build \
+  --platform "${PLATFORMS}" \
+  --tag "${IMAGE_BASE}:${FE_TAG}" \
   --build-arg VITE_API_URL=http://localhost:9559/api \
-  -f Dockerfile.fe .
-echo "📤 Pushing ${IMAGE_BASE}:${FE_TAG}"
-docker push "${IMAGE_BASE}:${FE_TAG}"
+  --file Dockerfile.fe \
+  --push \
+  .
 
 echo ""
 echo "✅ Pushed:"
