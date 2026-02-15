@@ -112,47 +112,51 @@ export const GoalRowHeader = ({
 
   return (
     <div className={cn(
-      "sticky left-0 z-10 flex items-center gap-2 border-r border-b border-grid-border px-2 sm:px-3 py-2 w-[160px] sm:w-[220px] md:w-[280px] shrink-0",
+      "sticky left-0 z-10 flex items-center gap-2 border-r border-b border-grid-border px-2 sm:px-3 py-1.5 w-[320px] sm:w-[400px] md:w-[480px] shrink-0",
       isCompleted ? "bg-muted/30" : "bg-card"
     )}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {isCompleted && (
-            <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
           )}
           <h3 className={cn(
-            "font-medium text-sm truncate",
+            "font-medium text-xs truncate",
             isCompleted && "line-through text-muted-foreground"
           )}>{goal.title}</h3>
           {(goal.isWeekendGoal || goal.isWeekdayGoal) && (
-            <span className="inline-flex items-center rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground">
+            <span className="inline-flex items-center rounded-md bg-accent px-1 py-0.5 text-[9px] font-medium text-accent-foreground">
               {goal.isWeekendGoal ? 'WE' : 'WD'}
             </span>
           )}
         </div>
-        {/* Time, duration, date: each group stays on one line; groups wrap together when needed */}
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground font-mono">
+        {/* Line 1: time range | date */}
+        <div className="mt-0.5 text-[11px] text-muted-foreground font-mono flex items-center gap-1.5 flex-wrap">
           <span className="whitespace-nowrap" title="Time block">
             {formatTime(goal.startTime)} – {formatTime(goal.endTime)}
           </span>
-          <span className="whitespace-nowrap text-foreground">{formatDuration(goal.allocatedMinutes)}</span>
           {goal.targetEndDate && (
-            <span className="whitespace-nowrap inline-flex items-center gap-1 shrink-0" title="Target end date">
-              <CalendarIcon className="h-3 w-3 shrink-0" />
-              <span>{format(parseISO(goal.targetEndDate), 'MMM d, yyyy')}</span>
-            </span>
+            <>
+              <span className="text-muted-foreground/60">|</span>
+              <span className="whitespace-nowrap inline-flex items-center gap-0.5" title="Target end date">
+                <CalendarIcon className="h-2.5 w-2.5 shrink-0" />
+                <span>{format(parseISO(goal.targetEndDate), 'MMM d, yyyy')}</span>
+              </span>
+            </>
           )}
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 mt-2 min-w-0">
-          <div className="flex items-center gap-1 text-xs">
-            <Flame className="h-3 w-3 text-rag-amber" />
-            <span className="font-mono">{analytics.currentStreak}</span>
+        {/* Line 2: duration, streak, completion % */}
+        <div className="flex items-center gap-2 mt-1 min-w-0 text-[11px] font-mono">
+          <span className="text-foreground shrink-0">{formatDuration(goal.allocatedMinutes)}</span>
+          <div className="flex items-center gap-1 text-muted-foreground shrink-0">
+            <Flame className="h-2.5 w-2.5 text-rag-amber" />
+            <span>{analytics.currentStreak}</span>
           </div>
-          <div className="flex items-center gap-1 text-xs">
-            <TrendingUp className="h-3 w-3 text-rag-green" />
-            <span className="font-mono">{analytics.completionRate.toFixed(0)}%</span>
+          <div className="flex items-center gap-1 text-muted-foreground shrink-0">
+            <TrendingUp className="h-2.5 w-2.5 text-rag-green" />
+            <span>{analytics.completionRate.toFixed(0)}%</span>
           </div>
-          <Progress value={analytics.completionRate} className="flex-1 h-1.5" />
+          <Progress value={analytics.completionRate} className="flex-1 h-1 min-w-0" />
         </div>
       </div>
 

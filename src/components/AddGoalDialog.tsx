@@ -187,7 +187,7 @@ export const AddGoalButton = ({ onClick }: AddGoalButtonProps) => {
   return (
     <button
       onClick={onClick}
-      className="sticky left-0 z-10 flex items-center gap-2 border-r border-b border-dashed border-grid-border bg-card/50 px-3 py-3 min-w-[280px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+      className="sticky left-0 z-10 flex items-center gap-2 border-r border-b border-dashed border-grid-border bg-card/50 px-3 py-3 w-[320px] sm:w-[400px] md:w-[480px] shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
     >
       <Plus className="h-4 w-4" />
       <span className="text-sm">Add goal</span>

@@ -113,37 +113,43 @@ const EisenhowerPage = () => {
         </div>
 
         <TabsContent value="in-progress" className="flex-1 overflow-hidden mt-0">
-          <div className="relative h-full">
-            {/* Axis labels - hidden on mobile */}
-            <div className="hidden md:flex absolute top-2 left-1/2 -translate-x-1/2 z-10 items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-              <span className="text-destructive">← Urgent</span>
-              <span className="w-px h-3 bg-border" />
-              <span className="text-muted-foreground/50">Not Urgent →</span>
-            </div>
-            <div className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10">
-              <div className="flex flex-col items-center gap-2 text-[10px] font-semibold uppercase tracking-widest" style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}>
-                <span className="text-primary rotate-180">← Important</span>
-                <span className="w-3 h-px bg-border" />
-                <span className="text-muted-foreground/50 rotate-180">Not Important →</span>
+          <div className="flex h-full overflow-auto">
+            {/* Vertical axis (Important / Not Important) - own column, row-aligned with quadrants */}
+            <div className="hidden md:grid grid-rows-2 flex-shrink-0 w-10 gap-3 py-3 pr-0 items-center justify-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center justify-center min-h-[120px]">
+                <span className="text-primary" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Important</span>
+              </div>
+              <div className="flex items-center justify-center min-h-[120px]">
+                <span className="text-muted-foreground/50" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Not Important</span>
               </div>
             </div>
 
-            {/* Grid - 2x2 on desktop, single column on mobile */}
-            <div className="h-full overflow-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-4 md:pl-8 md:pt-8 h-full" style={{ gridTemplateRows: 'repeat(2, minmax(250px, 1fr))' }}>
-                {QUADRANTS.map((q) => (
-                  <EisenhowerQuadrantComponent
-                    key={q}
-                    quadrant={q}
-                    tasks={getTasksByQuadrant(q)}
-                    onComplete={completeTask}
-                    onDelete={deleteTask}
-                    onUpdate={updateTask}
-                    onAdd={handleAdd}
-                    onDragStart={handleDragStart}
-                    onDrop={handleDrop}
-                  />
-                ))}
+            {/* Grid + horizontal axis */}
+            <div className="flex-1 flex flex-col min-w-0">
+              {/* Horizontal axis - above grid */}
+              <div className="hidden md:flex items-center justify-center gap-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest shrink-0">
+                <span className="text-destructive">← Urgent</span>
+                <span className="w-px h-3 bg-border" />
+                <span className="text-muted-foreground/50">Not Urgent →</span>
+              </div>
+
+              {/* 2x2 quadrant grid */}
+              <div className="flex-1 overflow-auto min-h-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-4 h-full" style={{ gridTemplateRows: 'repeat(2, minmax(250px, 1fr))' }}>
+                  {QUADRANTS.map((q) => (
+                    <EisenhowerQuadrantComponent
+                      key={q}
+                      quadrant={q}
+                      tasks={getTasksByQuadrant(q)}
+                      onComplete={completeTask}
+                      onDelete={deleteTask}
+                      onUpdate={updateTask}
+                      onAdd={handleAdd}
+                      onDragStart={handleDragStart}
+                      onDrop={handleDrop}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>

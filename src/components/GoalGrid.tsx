@@ -148,7 +148,7 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
         <div className="min-w-full">
           {/* Day headers */}
           <div className="flex sticky top-0 z-20 bg-card">
-            <div className="sticky left-0 z-30 border-r border-b border-grid-border bg-grid-header w-[160px] sm:w-[220px] md:w-[280px] shrink-0" />
+            <div className="sticky left-0 z-30 border-r border-b border-grid-border bg-grid-header w-[320px] sm:w-[400px] md:w-[480px] shrink-0" />
 
             <div className="flex flex-1">
               {days.map((date) => {
@@ -157,7 +157,7 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
                   <div
                     key={info.date}
                     className={cn(
-                      'grid-cell grid-header flex flex-col items-center justify-center flex-1 min-w-[48px] sm:min-w-[60px] cursor-pointer',
+                      'grid-cell grid-header flex flex-col items-center justify-center flex-1 min-w-[24px] sm:min-w-[30px] cursor-pointer',
                       !info.isOfficeDay && 'bg-day-nonoffice',
                       info.isToday && 'bg-day-today'
                     )}
@@ -223,7 +223,7 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
                       return (
                         <div
                           key={info.date}
-                          className="grid-cell relative flex flex-col items-center justify-center gap-0.5 min-h-[48px] sm:min-h-[56px] flex-1 min-w-[48px] sm:min-w-[60px] bg-muted/20 opacity-30 cursor-not-allowed"
+                          className="grid-cell relative flex flex-col items-center justify-center gap-0.5 min-h-[48px] sm:min-h-[56px] flex-1 min-w-[24px] sm:min-w-[30px] bg-muted/20 opacity-30 cursor-not-allowed"
                           title={scopeLabel}
                         >
                           <span className="text-[10px] text-muted-foreground">—</span>

@@ -68,7 +68,7 @@ export const DayCell = ({
     <>
       <div
         className={cn(
-          'grid-cell relative flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors min-h-[48px] sm:min-h-[56px] flex-1 min-w-[48px] sm:min-w-[60px]',
+          'grid-cell relative flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors min-h-[48px] sm:min-h-[56px] flex-1 min-w-[24px] sm:min-w-[30px]',
           isOfficeDay ? 'grid-cell-office' : 'grid-cell-nonoffice',
           isToday && 'grid-cell-today',
           !isPast && 'opacity-60',
