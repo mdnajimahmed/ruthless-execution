@@ -22,7 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Progress } from '@/components/ui/progress';
 import { 
   MoreVertical, 
   Pencil, 
@@ -112,57 +111,45 @@ export const GoalRowHeader = ({
 
   return (
     <div className={cn(
-      "sticky left-0 z-10 flex items-center gap-2 border-r border-b border-grid-border px-2 sm:px-3 py-1.5 w-[320px] sm:w-[400px] md:w-[480px] shrink-0",
+      "sticky left-0 z-10 flex items-center gap-2 border-r border-b border-grid-border px-3 w-[320px] sm:w-[400px] md:w-[480px] shrink-0 h-[52px] min-h-[52px] transition-colors",
       isCompleted ? "bg-muted/30" : "bg-card"
     )}>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          {isCompleted && (
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
-          )}
-          <h3 className={cn(
-            "font-medium text-xs truncate",
-            isCompleted && "line-through text-muted-foreground"
-          )}>{goal.title}</h3>
-          {(goal.isWeekendGoal || goal.isWeekdayGoal) && (
-            <span className="inline-flex items-center rounded-md bg-accent px-1 py-0.5 text-[9px] font-medium text-accent-foreground">
-              {goal.isWeekendGoal ? 'WE' : 'WD'}
-            </span>
-          )}
-        </div>
-        {/* Line 1: time range | date */}
-        <div className="mt-0.5 text-[11px] text-muted-foreground font-mono flex items-center gap-1.5 flex-wrap">
-          <span className="whitespace-nowrap" title="Time block">
-            {formatTime(goal.startTime)} – {formatTime(goal.endTime)}
-          </span>
-          {goal.targetEndDate && (
-            <>
-              <span className="text-muted-foreground/60">|</span>
-              <span className="whitespace-nowrap inline-flex items-center gap-0.5" title="Target end date">
-                <CalendarIcon className="h-2.5 w-2.5 shrink-0" />
-                <span>{format(parseISO(goal.targetEndDate), 'MMM d, yyyy')}</span>
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        {isCompleted && (
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap gap-y-0">
+            <h3 className={cn(
+              "font-medium text-xs truncate",
+              isCompleted && "line-through text-muted-foreground"
+            )}>{goal.title}</h3>
+            {(goal.isWeekendGoal || goal.isWeekdayGoal) && (
+              <span className="inline-flex rounded bg-accent px-1 py-0.5 text-[9px] font-medium text-accent-foreground shrink-0">
+                {goal.isWeekendGoal ? 'WE' : 'WD'}
               </span>
-            </>
-          )}
-        </div>
-        {/* Line 2: duration, streak, completion % */}
-        <div className="flex items-center gap-2 mt-1 min-w-0 text-[11px] font-mono">
-          <span className="text-foreground shrink-0">{formatDuration(goal.allocatedMinutes)}</span>
-          <div className="flex items-center gap-1 text-muted-foreground shrink-0">
-            <Flame className="h-2.5 w-2.5 text-rag-amber" />
-            <span>{analytics.currentStreak}</span>
+            )}
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground shrink-0">
-            <TrendingUp className="h-2.5 w-2.5 text-rag-green" />
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono leading-tight mt-0.5">
+            <span className="whitespace-nowrap">{formatTime(goal.startTime)}–{formatTime(goal.endTime)}</span>
+            {goal.targetEndDate && (
+              <span className="whitespace-nowrap inline-flex items-center gap-0.5">
+                <CalendarIcon className="h-2.5 w-2.5" />
+                {format(parseISO(goal.targetEndDate), 'MMM d')}
+              </span>
+            )}
+            <span className="text-foreground">{formatDuration(goal.allocatedMinutes)}</span>
+            <Flame className="h-2.5 w-2.5 text-rag-amber shrink-0" />
+            <span>{analytics.currentStreak}</span>
+            <TrendingUp className="h-2.5 w-2.5 text-rag-green shrink-0" />
             <span>{analytics.completionRate.toFixed(0)}%</span>
           </div>
-          <Progress value={analytics.completionRate} className="flex-1 h-1 min-w-0" />
         </div>
       </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

@@ -23,6 +23,7 @@ interface DayCellProps {
   isOfficeDay: boolean;
   isToday: boolean;
   isPast: boolean;
+  cellClassName?: string;
   onToggleStatus: () => void;
   onUpdateEntry: (updates: Partial<DayEntry>) => void;
 }
@@ -35,6 +36,7 @@ export const DayCell = ({
   isOfficeDay,
   isToday,
   isPast,
+  cellClassName,
   onToggleStatus,
   onUpdateEntry,
 }: DayCellProps) => {
@@ -66,13 +68,15 @@ export const DayCell = ({
 
   return (
     <>
-      <div
+      <button
+        type="button"
+        aria-label={`Set status for ${goal.title} on ${date}`}
         className={cn(
-          'grid-cell relative flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors min-h-[48px] sm:min-h-[56px] flex-1 min-w-[24px] sm:min-w-[30px]',
+          'grid-cell grid-cell-interactive relative flex flex-col cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-inset w-full border-0 text-left',
+          cellClassName ?? 'flex-1 min-w-[24px] sm:min-w-[30px]',
           isOfficeDay ? 'grid-cell-office' : 'grid-cell-nonoffice',
-          isToday && 'grid-cell-today',
-          !isPast && 'opacity-60',
-          'hover:bg-grid-hover'
+          isToday && 'grid-cell-today today-column-highlight',
+          !isPast && 'opacity-70'
         )}
         onClick={onToggleStatus}
         onContextMenu={(e) => {
@@ -80,11 +84,15 @@ export const DayCell = ({
           setIsDetailOpen(true);
         }}
       >
-        <StatusIndicator status={status} size="sm" />
+        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <StatusIndicator status={status} size="sm" />
+        </span>
         {hasComment && (
-          <MessageSquare className="absolute bottom-1 right-1 h-3 w-3 text-muted-foreground" />
+          <span className="absolute bottom-1.5 right-1.5 pointer-events-none" aria-hidden>
+            <MessageSquare className="h-3 w-3 text-muted-foreground/80" />
+          </span>
         )}
-      </div>
+      </button>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="sm:max-w-[425px]">

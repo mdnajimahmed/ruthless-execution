@@ -57,8 +57,8 @@
     --day-nonoffice: 210 20% 96%;
     --day-today: 221 83% 97%;
 
-    /* Grid styling */
-    --grid-border: 214 32% 88%;
+    /* Grid styling – clear row/column dividers */
+    --grid-border: 214 25% 82%;
     --grid-header: 210 40% 96%;
     --grid-hover: 210 40% 98%;
 
@@ -119,8 +119,8 @@
     --day-nonoffice: 222 47% 6%;
     --day-today: 221 83% 12%;
 
-    /* Grid styling */
-    --grid-border: 217 33% 20%;
+    /* Grid styling – clear row/column dividers */
+    --grid-border: 217 28% 28%;
     --grid-header: 217 33% 12%;
     --grid-hover: 217 33% 15%;
 
@@ -166,12 +166,20 @@
     @apply bg-rag-amber-light text-rag-amber;
   }
 
-  /* Grid cell styles */
+  /* Grid cell styles – clear row/column dividers, 8px rhythm */
   .grid-cell {
-    @apply border-r border-b border-grid-border px-2 py-1.5 text-sm;
+    @apply text-sm;
+    border-right: 1px solid hsl(var(--grid-border)) !important;
+    border-bottom: 1px solid hsl(var(--grid-border)) !important;
+    padding: 0.5rem 0.625rem;
   }
   .grid-header {
     @apply bg-grid-header font-medium text-muted-foreground;
+  }
+  /* Date column header: tighter vertical padding so WED / date / Today fit without clipping */
+  button.grid-header {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
   }
   .grid-cell-office {
     @apply bg-day-office;
@@ -180,7 +188,27 @@
     @apply bg-day-nonoffice;
   }
   .grid-cell-today {
-    @apply bg-day-today ring-1 ring-inset ring-primary/20;
+    @apply bg-day-today;
+  }
+  /* Today column: elevated with soft shadow, no blue line */
+  .today-column-accent {
+    position: relative;
+    z-index: 10;
+    background: hsl(var(--day-today));
+    box-shadow: -6px 0 16px -4px hsl(220 20% 40% / 0.08), 6px 0 16px -4px hsl(220 20% 40% / 0.08);
+  }
+  .today-column-header {
+    @apply bg-card font-medium;
+  }
+  /* Interactive cell: clear affordance */
+  .grid-cell-interactive {
+    @apply transition-colors duration-150;
+  }
+  .grid-cell-interactive:hover {
+    @apply bg-grid-hover;
+  }
+  .grid-cell-interactive:active {
+    @apply bg-muted/60;
   }
 
   /* Scrollbar styling */

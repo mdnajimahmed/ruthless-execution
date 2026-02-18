@@ -37,14 +37,14 @@ const statusConfig = {
 
 const sizeConfig = {
   sm: {
-    container: 'h-5 w-5',
-    icon: 'h-3 w-3',
+    container: 'h-6 w-6',
+    icon: 'h-3.5 w-3.5',
     dot: 'h-2 w-2',
     text: 'text-xs',
   },
   md: {
-    container: 'h-6 w-6',
-    icon: 'h-3.5 w-3.5',
+    container: 'h-7 w-7',
+    icon: 'h-4 w-4',
     dot: 'h-2.5 w-2.5',
     text: 'text-sm',
   },
@@ -65,12 +65,13 @@ export const StatusIndicator = ({ status, size = 'md', showLabel = false }: Stat
     <div className={cn('flex items-center gap-1.5', showLabel && 'gap-2')}>
       <div
         className={cn(
-          'flex items-center justify-center rounded-full',
+          'grid place-items-center shrink-0 rounded-full shadow-sm ring-1 ring-black/5',
           config.className,
           sizeClass.container
         )}
+        aria-hidden
       >
-        <Icon className={sizeClass.icon} />
+        <Icon className={cn(sizeClass.icon, 'shrink-0')} strokeWidth={2.5} />
       </div>
       {showLabel && (
         <span className={cn('font-medium', sizeClass.text, 'text-foreground')}>

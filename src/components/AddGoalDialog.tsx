@@ -186,11 +186,12 @@ interface AddGoalButtonProps {
 export const AddGoalButton = ({ onClick }: AddGoalButtonProps) => {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="sticky left-0 z-10 flex items-center gap-2 border-r border-b border-dashed border-grid-border bg-card/50 px-3 py-3 w-[320px] sm:w-[400px] md:w-[480px] shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+      className="sticky left-0 z-10 flex items-center gap-2 border-r border-b border-dashed border-grid-border bg-muted/30 px-3 w-[320px] sm:w-[400px] md:w-[480px] shrink-0 h-[52px] min-h-[52px] text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-inset"
     >
-      <Plus className="h-4 w-4" />
-      <span className="text-sm">Add goal</span>
+      <Plus className="h-4 w-4 shrink-0" />
+      <span className="text-sm font-medium">Add goal</span>
     </button>
   );
 };

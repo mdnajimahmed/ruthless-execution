@@ -33,7 +33,7 @@ Pass these to `docker compose` (e.g. `export` in your shell or put them in a `.e
 
 ## Sample command:
 ```
-export export FE_TAG=fe-2026-02-15-2103-c8ae6a9 BE_TAG=be-2026-02-15-2103-c8ae6a9 BOOTSTRAP_USER_EMAIL=you@example.com BOOTSTRAP_USER_PASSWORD=yourpassword
+export FE_TAG=fe-2026-02-18-1152-e9a3d7b BE_TAG=be-2026-02-18-1152-e9a3d7b BOOTSTRAP_USER_EMAIL=you@example.com BOOTSTRAP_USER_PASSWORD=yourpassword
 docker compose -f docker-compose.images.yml up -d
 ```
 
