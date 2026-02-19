@@ -7,13 +7,15 @@ cd "$ROOT"
 
 echo "🚀 Starting local development environment (project root: $ROOT)..."
 
-# Start PostgreSQL in Docker
-echo "📦 Starting PostgreSQL container..."
-docker-compose up -d
+# Start dev PostgreSQL (isolated from production docker-compose.images.yml)
+COMPOSE_FILE="docker-compose.dev.yml"
+COMPOSE_PROJECT="month-goal-tracker-dev"
+echo "📦 Starting PostgreSQL container (dev only, project: $COMPOSE_PROJECT)..."
+docker-compose -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" up -d
 
 # Wait for PostgreSQL to be ready
 echo "⏳ Waiting for PostgreSQL to be ready..."
-until docker-compose exec -T postgres pg_isready -U postgres > /dev/null 2>&1; do
+until docker-compose -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" exec -T postgres pg_isready -U postgres > /dev/null 2>&1; do
   sleep 1
 done
 
@@ -43,6 +45,10 @@ echo "🔧 Generating Prisma client..."
 echo "🗄️  Syncing database schema..."
 (cd backend && npx prisma db push)
 
+# Ensure default dev user exists (email: dev@local.dev, password: dev123456)
+echo "👤 Ensuring default dev user (dev@local.dev / dev123456)..."
+(cd backend && npm run create-user dev@local.dev dev123456) || true
+
 # Kill any process using port 3002
 echo "🔍 Checking port 3002..."
 if lsof -ti:3002 > /dev/null 2>&1; then
@@ -71,10 +77,11 @@ echo ""
 echo "✅ Development environment is running!"
 echo "   Frontend: http://localhost:8080 (or next available port)"
 echo "   Backend:  http://localhost:3002"
+echo "   Login:    dev@local.dev / dev123456"
 echo ""
 echo "Press Ctrl+C to stop all services..."
 
 # Wait for user interrupt
-trap "echo ''; echo '🛑 Stopping services...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; lsof -ti:3002 | xargs kill -9 2>/dev/null || true; docker-compose down; exit" INT TERM
+trap "echo ''; echo '🛑 Stopping services...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; lsof -ti:3002 | xargs kill -9 2>/dev/null || true; docker-compose -f $COMPOSE_FILE -p $COMPOSE_PROJECT down; exit" INT TERM
 
 wait

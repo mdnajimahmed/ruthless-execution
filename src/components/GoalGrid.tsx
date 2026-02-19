@@ -5,7 +5,6 @@ import { isGoalActiveOnDay } from '@/types/goals';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { GoalRowHeader } from './GoalRowHeader';
 import { DayCell } from './DayCell';
-import { AddGoalDialog, AddGoalButton } from './AddGoalDialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, CalendarIcon, CalendarDays } from 'lucide-react';
@@ -28,7 +27,6 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
     currentYear,
     currentMonth,
     monthData,
-    addGoal,
     updateGoal,
     completeGoal,
     uncompleteGoal,
@@ -41,7 +39,6 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
     calculateGoalAnalytics,
   } = useGoalTracker();
 
-  const [isAddingGoal, setIsAddingGoal] = useState(false);
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const stickyColRef = useRef<HTMLDivElement>(null);
 
@@ -243,7 +240,6 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
                   onViewAnalytics={() => navigate(`/goal-analytics/${goal.id}`)}
                 />
               ))}
-              {!showCompleted && <AddGoalButton onClick={() => setIsAddingGoal(true)} />}
             </div>
 
             {/* Day columns: wrapper = dateColumnsWidth so grid fills viewport; each column = columnWidthPx */}
@@ -316,9 +312,6 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
                       />
                     );
                   })}
-                  {!showCompleted && (
-                    <div className="grid-cell border-r border-b border-dashed border-grid-border h-[52px] min-h-[52px] shrink-0 bg-transparent" />
-                  )}
                 </div>
               );
             })}
@@ -327,11 +320,6 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
         )}
       </div>
 
-      <AddGoalDialog
-        open={isAddingGoal}
-        onOpenChange={setIsAddingGoal}
-        onAddGoal={addGoal}
-      />
     </div>
   );
 };

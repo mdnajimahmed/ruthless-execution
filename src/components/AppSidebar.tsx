@@ -29,8 +29,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-1 py-1.5">
+      <SidebarHeader className="border-b border-sidebar-border h-[52px] flex flex-row items-center p-0 px-3">
+        <div className="flex items-center gap-2 w-full min-h-0">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-bold text-sm">Rx</span>
           </div>

@@ -26,7 +26,7 @@ const BacklogPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="flex items-center justify-between px-4 py-2 border-b bg-card shrink-0 gap-2">
+      <header className="flex items-center justify-between px-4 border-b bg-card shrink-0 gap-2 h-[52px]">
         <div className="flex items-center gap-3 min-w-0">
           <SidebarTrigger />
           <div className="min-w-0">

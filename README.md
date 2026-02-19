@@ -31,19 +31,24 @@ Pass these to `docker compose` (e.g. `export` in your shell or put them in a `.e
 | `BOOTSTRAP_USER_EMAIL` | No | If set with `BOOTSTRAP_USER_PASSWORD`, a user is created on first backend start so you can log in. |
 | `BOOTSTRAP_USER_PASSWORD` | No | Password for the bootstrap user (min 8 characters). Ignored unless `BOOTSTRAP_USER_EMAIL` is set. |
 
-## Sample command:
+## Sample command (production / full stack):
 ```
-export FE_TAG=fe-2026-02-18-1152-e9a3d7b BE_TAG=be-2026-02-18-1152-e9a3d7b BOOTSTRAP_USER_EMAIL=you@example.com BOOTSTRAP_USER_PASSWORD=yourpassword
-docker compose -f docker-compose.images.yml up -d
+export xport FE_TAG=fe-2026-02-19-1546-17d8ae4 BE_TAG=be-2026-02-19-1546-17d8ae4 BOOTSTRAP_USER_EMAIL=you@example.com BOOTSTRAP_USER_PASSWORD=yourpassword
+docker compose -f docker-compose.images.yml -p ruthless-execution up -d
 ```
+
+Using `-p ruthless-execution` keeps this stack separate from local dev. Dev uses `./scripts/dev.sh` and its own DB (`docker-compose.dev.yml`, project `month-goal-tracker-dev`), so stopping dev never stops the production stack.
 
 If you didn't use bootstrap env vars, create a user manually (after the stack is up):
 
-docker compose -f docker-compose.images.yml exec be npm run create-user <EMAIL> <PASSWORD>
+docker compose -f docker-compose.images.yml -p ruthless-execution exec be npm run create-user <EMAIL> <PASSWORD>
 
 
 
 
 
 
-
+# Dev
+./scripts/dev
+dev@local.dev
+dev123456

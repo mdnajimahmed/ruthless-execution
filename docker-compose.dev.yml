@@ -1,0 +1,27 @@
+# Dev-only PostgreSQL. Used by scripts/dev.sh.
+# Isolated from production (docker-compose.images.yml): different project name,
+# container name, and volume so "docker compose down" in dev never touches production.
+# Usage: docker compose -f docker-compose.dev.yml -p month-goal-tracker-dev up -d
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: month-goal-tracker-dev-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: goal_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data_dev:
