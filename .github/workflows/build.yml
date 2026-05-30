@@ -13,13 +13,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Read version
+      - name: Read version from package.json
         id: version
         run: |
-          APP_NAME=$(jq -r '.appName' version.json)
-          VERSION=$(jq -r '.version' version.json)
-          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "app_name=$(jq -r '.name' package.json)" >> $GITHUB_OUTPUT
+          echo "version=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,6 +28,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Platforms:
+      #   linux/amd64 — Ubuntu CI runner (native), macOS Intel, Windows, Linux x86
+      #   linux/arm64 — Oracle Cloud Ampere free tier, macOS Apple Silicon, ARM servers
       - name: Build and push backend
         uses: docker/build-push-action@v6
         with:
@@ -48,7 +49,8 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          # VITE_API_URL is baked in at build time by Vite — set this secret in GitHub repo settings
+          # VITE_API_URL is baked into the JS bundle at build time by Vite.
+          # Set this secret in GitHub repo Settings → Secrets → Actions.
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
           tags: ivplay4689/turinghatch:${{ steps.version.outputs.app_name }}-fe-${{ steps.version.outputs.version }}
