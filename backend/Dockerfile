@@ -1,5 +1,5 @@
 # Build stage (Node 24 LTS, Debian-based for Prisma compatibility)
-FROM node:24-bookworm-slim AS builder
+FROM node:24.16.0-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY src ./src/
 RUN npm run build
 
 # Run stage (same base as builder)
-FROM node:24-bookworm-slim
+FROM node:24.16.0-bookworm-slim
 
 WORKDIR /app
 
