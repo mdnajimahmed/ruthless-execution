@@ -24,7 +24,7 @@ services:
       retries: 5
 
   be:
-    image: ivplay4689/ruthless-execution:${BE_TAG:-latest}
+    image: ivplay4689/turinghatch:${BE_TAG:-latest}
     container_name: ruthless-execution-be
     environment:
       NODE_ENV: production
@@ -42,7 +42,7 @@ services:
         condition: service_healthy
 
   fe:
-    image: ivplay4689/ruthless-execution:${FE_TAG:-latest}
+    image: ivplay4689/turinghatch:${FE_TAG:-latest}
     container_name: ruthless-execution-fe
     ports:
       - "4689:8080"

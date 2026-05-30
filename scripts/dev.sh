@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Ensure we run from project root (directory containing backend/, scripts/, package.json)
+# Ensure we run from project root (directory containing backend/, frontend/, scripts/)
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
@@ -33,7 +33,7 @@ else
   fi
 fi
 
-# Install backend dependencies (ensures dotenv etc. are present)
+# Install backend dependencies
 echo "📦 Installing backend dependencies..."
 (cd backend && npm install)
 
@@ -41,7 +41,7 @@ echo "📦 Installing backend dependencies..."
 echo "🔧 Generating Prisma client..."
 (cd backend && npm run prisma:generate)
 
-# Create DB schema (use db push for dev so no migration files required on first run)
+# Create DB schema (db push for dev — no migration files required on first run)
 echo "🗄️  Syncing database schema..."
 (cd backend && npx prisma db push)
 
@@ -63,14 +63,14 @@ echo "🔧 Starting backend server on port 3002..."
 BACKEND_PID=$!
 
 # Install frontend dependencies if needed
-if [ ! -d "node_modules" ]; then
+if [ ! -d "frontend/node_modules" ]; then
   echo "📦 Installing frontend dependencies..."
-  npm install
+  (cd frontend && npm install)
 fi
 
 # Start frontend
 echo "🎨 Starting frontend..."
-npm run dev &
+(cd frontend && npm run dev) &
 FRONTEND_PID=$!
 
 echo ""
