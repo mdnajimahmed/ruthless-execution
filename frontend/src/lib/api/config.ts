@@ -73,9 +73,9 @@ export async function apiRequest<T>(
       if (error.status === 401 || error.status === 403) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth_token');
-          // Only redirect if not already on login page
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
+          const loginPath = `${import.meta.env.BASE_URL}login`;
+          if (!window.location.pathname.startsWith(loginPath)) {
+            window.location.href = loginPath;
           }
         }
       }

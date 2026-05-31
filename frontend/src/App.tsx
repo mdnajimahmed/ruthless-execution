@@ -50,7 +50,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter basename="/ruthless-execution">
           <AuthProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
