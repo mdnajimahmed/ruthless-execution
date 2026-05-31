@@ -60,7 +60,7 @@ jobs:
           # VITE_API_URL is baked into the JS bundle at build time by Vite.
           # Set this secret in GitHub repo Settings → Secrets → Actions.
           build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_API_URL=${{ vars.VITE_API_URL }}
           tags: ivplay4689/turinghatch:${{ steps.version.outputs.app_name }}-fe-${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
