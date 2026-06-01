@@ -116,9 +116,6 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <p className="mt-8 text-xs text-gray-400">
-        The Best Way to Learn Is to Build.
-      </p>
     </div>
   );
 }
