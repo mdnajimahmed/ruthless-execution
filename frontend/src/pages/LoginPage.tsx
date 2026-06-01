@@ -35,9 +35,6 @@ export default function LoginPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[10px] bg-teal-700">
           <span className="text-lg font-bold text-white">Rx</span>
         </div>
-        <p className="text-sm font-medium tracking-[0.04em] text-teal-600 lowercase">
-          turinghatch
-        </p>
         <h1 className="mt-1 text-2xl font-bold tracking-[0.02em] text-teal-900">
           Ruthless Execution
         </h1>
@@ -120,7 +117,7 @@ export default function LoginPage() {
       </div>
 
       <p className="mt-8 text-xs text-gray-400">
-        turinghatch · your personal productivity platform
+        The Best Way to Learn Is to Build.
       </p>
     </div>
   );
