@@ -288,7 +288,7 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
                       return (
                         <div
                           key={goal.id}
-                          className="grid-cell relative flex items-center justify-center h-[52px] min-h-[52px] shrink-0 bg-muted/15 opacity-40 cursor-not-allowed border-r border-b border-grid-border"
+                          className="grid-cell relative flex items-center justify-center h-[68px] min-h-[68px] shrink-0 bg-muted/15 opacity-40 cursor-not-allowed border-r border-b border-grid-border"
                           title={goal.isWeekendGoal ? 'Weekend goal — not active on weekdays' : 'Weekday goal — not active on weekends'}
                           aria-hidden
                         >
@@ -306,7 +306,7 @@ export const GoalGrid = ({ showCompleted = false }: GoalGridProps) => {
                         isOfficeDay={info.isOfficeDay}
                         isToday={info.isToday}
                         isPast={info.isPast}
-                        cellClassName="shrink-0 w-full h-[52px] min-h-[52px] border-r border-b border-grid-border"
+                        cellClassName="shrink-0 w-full h-[68px] min-h-[68px] border-r border-b border-grid-border"
                         onToggleStatus={() => toggleDayStatus(goal.id, info.date)}
                         onUpdateEntry={(updates) => updateEntry(goal.id, info.date, updates)}
                       />

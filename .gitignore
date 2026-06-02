@@ -42,3 +42,8 @@ infrastructure/bin/*.d.ts
 
 # Docker
 postgres_data
+
+# Media files
+*.mp3
+*.mp4
+*.wav

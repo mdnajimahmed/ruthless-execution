@@ -32,14 +32,14 @@ app.use('/api', routes);
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
-  
+
   if (err.name === 'ZodError') {
-    return res.status(400).json({
-      error: 'Validation error',
-      details: err.errors,
-    });
+    const first = err.errors?.[0];
+    const field = first?.path?.length > 0 ? `${first.path.join('.')}: ` : '';
+    const message = first ? `${field}${first.message}` : 'Validation error';
+    return res.status(400).json({ error: message });
   }
-  
+
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error',
   });

@@ -40,4 +40,4 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 9559
 
 # Apply schema to DB first (required for fresh installs), then start server
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/index.js"]

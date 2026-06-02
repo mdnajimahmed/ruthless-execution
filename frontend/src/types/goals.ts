@@ -1,6 +1,7 @@
 export interface Goal {
   id: string;
   title: string;
+  description?: string;
   startTime: string; // "07:00" format
   endTime: string; // "07:30" format
   allocatedMinutes: number;

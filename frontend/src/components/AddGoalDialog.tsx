@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Goal } from '@/types/goals';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
@@ -15,53 +16,89 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, CalendarIcon } from 'lucide-react';
+import { Plus, CalendarIcon, Loader2, AlertCircle } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface AddGoalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;
+  onAddGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => Promise<Goal>;
 }
 
 export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogProps) => {
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('07:30');
   const [isWeekendGoal, setIsWeekendGoal] = useState(false);
   const [isWeekdayGoal, setIsWeekdayGoal] = useState(false);
   const [targetEndDate, setTargetEndDate] = useState<Date | undefined>(addMonths(new Date(), 1));
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAdd = () => {
+  const reset = () => {
+    setTitle('');
+    setDescription('');
+    setStartTime('07:00');
+    setEndTime('07:30');
+    setIsWeekendGoal(false);
+    setIsWeekdayGoal(false);
+    setTargetEndDate(addMonths(new Date(), 1));
+    setError(null);
+    setIsLoading(false);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) reset();
+    onOpenChange(open);
+  };
+
+  const handleAdd = async () => {
     if (!title.trim()) return;
 
     const [startH, startM] = startTime.split(':').map(Number);
     const [endH, endM] = endTime.split(':').map(Number);
     const allocatedMinutes = (endH * 60 + endM) - (startH * 60 + startM);
 
-    onAddGoal({
-      title: title.trim(),
-      startTime,
-      endTime,
-      allocatedMinutes: Math.max(0, allocatedMinutes),
-      tags: [],
-      isWeekendGoal,
-      isWeekdayGoal,
-      targetEndDate: targetEndDate ? format(targetEndDate, 'yyyy-MM-dd') : undefined,
-    });
+    if (allocatedMinutes <= 0) {
+      setError('End time must be after start time');
+      return;
+    }
 
-    setTitle('');
-    setStartTime('07:00');
-    setEndTime('07:30');
-    setIsWeekendGoal(false);
-    setIsWeekdayGoal(false);
-    setTargetEndDate(addMonths(new Date(), 1));
-    onOpenChange(false);
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      await onAddGoal({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        startTime,
+        endTime,
+        allocatedMinutes,
+        tags: [],
+        isWeekendGoal,
+        isWeekdayGoal,
+        targetEndDate: targetEndDate ? format(targetEndDate, 'yyyy-MM-dd') : undefined,
+      });
+      reset();
+      onOpenChange(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to add goal. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
+      e.preventDefault();
+      handleAdd();
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Goal</DialogTitle>
@@ -72,8 +109,24 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="e.g., Morning workout, Read technical docs..."
               autoFocus
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Description{' '}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What is this goal about? Why does it matter?"
+              rows={2}
+              disabled={isLoading}
+              className="resize-none"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -84,6 +137,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 className="font-mono"
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -93,6 +147,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 className="font-mono"
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -107,6 +162,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
                     setIsWeekdayGoal(checked === true);
                     if (checked) setIsWeekendGoal(false);
                   }}
+                  disabled={isLoading}
                 />
                 <label
                   htmlFor="weekdayGoal"
@@ -124,6 +180,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
                     setIsWeekendGoal(checked === true);
                     if (checked) setIsWeekdayGoal(false);
                   }}
+                  disabled={isLoading}
                 />
                 <label
                   htmlFor="weekendGoal"
@@ -142,9 +199,10 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !targetEndDate && "text-muted-foreground"
+                    'w-full justify-start text-left font-normal',
+                    !targetEndDate && 'text-muted-foreground'
                   )}
+                  disabled={isLoading}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {targetEndDate ? format(targetEndDate, 'PPP') : <span>Pick a date</span>}
@@ -165,13 +223,27 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
               When do you want to complete this goal?
             </p>
           </div>
+
+          {error && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleAdd} disabled={!title.trim()}>
-            Add Goal
+          <Button onClick={handleAdd} disabled={!title.trim() || isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding…
+              </>
+            ) : (
+              'Add Goal'
+            )}
           </Button>
         </div>
       </DialogContent>

@@ -30,6 +30,7 @@ model Goal {
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title           String
+  description     String?
   startTime       String    // "07:00" format
   endTime         String    // "07:30" format
   allocatedMinutes Int
