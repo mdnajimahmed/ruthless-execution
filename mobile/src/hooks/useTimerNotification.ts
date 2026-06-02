@@ -1,14 +1,22 @@
 import { useEffect, useRef } from 'react';
-import { Platform, AppState } from 'react-native';
+import { Platform, AppState, Vibration } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { useTimerStore } from '@/stores/timerStore';
 import { formatSeconds } from '@/utils/formatTime';
 import type { Goal } from '@/types/goal';
+import type { DayEntry } from '@/types/dayEntry';
 
 const CHANNEL_ID = 'timer_v2';
 const TIMER_NOTIF_ID = 'rex-timer';
 const SCHEDULE_NOTIF_ID = 'rex-schedule';
+
+// 30 seconds of pulsed vibration: 400ms on, 200ms off × 50 = 30 000ms
+const NUDGE_PATTERN: number[] = [0];
+for (let i = 0; i < 50; i++) NUDGE_PATTERN.push(400, 200);
+
+const NUDGE_INTERVAL_MS = 3 * 60 * 1000; // 3 min between bursts
+const NUDGE_TICK_MS = 30_000;            // re-evaluate every 30s
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -30,7 +38,6 @@ type ScheduleStatus =
 function getScheduleStatus(goals: Goal[]): ScheduleStatus {
   const now = nowInMinutes();
 
-  // Is there a goal whose window we're currently inside?
   const current = goals.find((g) => {
     const start = parseTimeToMinutes(g.startTime);
     const end = parseTimeToMinutes(g.endTime);
@@ -44,7 +51,6 @@ function getScheduleStatus(goals: Goal[]): ScheduleStatus {
     };
   }
 
-  // Next upcoming goal sorted by startTime
   const upcoming = goals
     .filter((g) => parseTimeToMinutes(g.startTime) > now)
     .sort((a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime))[0];
@@ -60,16 +66,32 @@ function getScheduleStatus(goals: Goal[]): ScheduleStatus {
   return { kind: 'done' };
 }
 
+function getUnattendedInWindowGoals(
+  goals: Goal[],
+  entries: DayEntry[],
+  activeTaskId: string | null,
+): Goal[] {
+  const now = nowInMinutes();
+  return goals.filter((g) => {
+    const start = parseTimeToMinutes(g.startTime);
+    const end = parseTimeToMinutes(g.endTime);
+    if (now < start || now >= end) return false;
+    if (activeTaskId === g.id) return false;           // timer running for this goal
+    const entry = entries.find((e) => e.goalId === g.id);
+    return !entry;                                     // no log at all = unattended
+  });
+}
+
 // ─── notification helpers ────────────────────────────────────────────────────
 
 async function setupChannel() {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Timer & Schedule',
-    importance: Notifications.AndroidImportance.DEFAULT, // DEFAULT = status bar icon, no sound
-    sound: null,           // explicitly no sound
-    vibrationPattern: null,
-    enableVibrate: false,
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: null,
+    vibrationPattern: [0, 250, 150, 250],
+    enableVibrate: true,
     showBadge: false,
   });
 }
@@ -125,7 +147,7 @@ async function showScheduleNotif(status: ScheduleStatus) {
       title,
       body,
       sticky: false,
-      priority: Notifications.AndroidNotificationPriority.LOW,
+      priority: Notifications.AndroidNotificationPriority.DEFAULT,
       ...(Platform.OS === 'android' && {
         android: {
           channelId: CHANNEL_ID,
@@ -141,11 +163,13 @@ async function showScheduleNotif(status: ScheduleStatus) {
 
 // ─── public hook ─────────────────────────────────────────────────────────────
 
-export function useTimerNotification(todayGoals: Goal[]) {
-  const { startedAt, activeTaskTitle } = useTimerStore();
+export function useTimerNotification(todayGoals: Goal[], todayEntries: DayEntry[]) {
+  const { startedAt, activeTaskTitle, activeTaskId } = useTimerStore();
   const isRunning = !!startedAt;
   const listenerRef = useRef<Notifications.Subscription | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scheduleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nudgeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastVibratedAtRef = useRef<number | null>(null);
 
   // One-time: channel + permissions + tap handler
   useEffect(() => {
@@ -154,7 +178,7 @@ export function useTimerNotification(todayGoals: Goal[]) {
 
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: false,
+        shouldShowAlert: true,
         shouldPlaySound: false,
         shouldSetBadge: false,
       }),
@@ -169,7 +193,9 @@ export function useTimerNotification(todayGoals: Goal[]) {
 
     return () => {
       listenerRef.current?.remove();
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (scheduleIntervalRef.current) clearInterval(scheduleIntervalRef.current);
+      if (nudgeIntervalRef.current) clearInterval(nudgeIntervalRef.current);
+      Vibration.cancel();
     };
   }, []);
 
@@ -182,28 +208,58 @@ export function useTimerNotification(todayGoals: Goal[]) {
     }
   }, [isRunning, startedAt, activeTaskTitle]);
 
-  // Schedule notification — always on, updates every 60s
+  // Schedule notification — updates every 60s
   useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (scheduleIntervalRef.current) clearInterval(scheduleIntervalRef.current);
     if (!todayGoals.length) {
       Notifications.dismissNotificationAsync(SCHEDULE_NOTIF_ID);
       return;
     }
 
     const tick = () => showScheduleNotif(getScheduleStatus(todayGoals));
-    tick(); // immediate first render
-
-    intervalRef.current = setInterval(tick, 60_000);
+    tick();
+    scheduleIntervalRef.current = setInterval(tick, 60_000);
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (scheduleIntervalRef.current) clearInterval(scheduleIntervalRef.current);
     };
   }, [todayGoals]);
 
-  // Clean up schedule notif when app backgrounds with nothing active
+  // Nudge vibration — every 30s check; vibrate 30s every 3min for unattended in-window goals
+  useEffect(() => {
+    if (nudgeIntervalRef.current) clearInterval(nudgeIntervalRef.current);
+
+    const checkAndNudge = () => {
+      const unattended = getUnattendedInWindowGoals(todayGoals, todayEntries, activeTaskId);
+
+      if (unattended.length === 0) {
+        // All goals attended or outside window — silence and reset cycle
+        Vibration.cancel();
+        lastVibratedAtRef.current = null;
+        return;
+      }
+
+      const now = Date.now();
+      const last = lastVibratedAtRef.current;
+
+      if (last === null || now - last >= NUDGE_INTERVAL_MS) {
+        lastVibratedAtRef.current = now;
+        Vibration.vibrate(NUDGE_PATTERN, false);
+      }
+    };
+
+    checkAndNudge();
+    nudgeIntervalRef.current = setInterval(checkAndNudge, NUDGE_TICK_MS);
+
+    return () => {
+      if (nudgeIntervalRef.current) clearInterval(nudgeIntervalRef.current);
+      Vibration.cancel();
+    };
+  }, [todayGoals, todayEntries, activeTaskId]);
+
+  // Re-evaluate immediately when app comes back to foreground
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        // Recalculate immediately when foregrounded
         showScheduleNotif(getScheduleStatus(todayGoals));
       }
     });

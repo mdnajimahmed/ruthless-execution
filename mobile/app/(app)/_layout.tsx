@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { FloatingTimerPill } from '@/components/FloatingTimerPill';
 import { useTimerNotification } from '@/hooks/useTimerNotification';
 import { useGoals } from '@/hooks/useGoals';
+import { useDayEntriesByDate } from '@/hooks/useDayEntries';
 import { todayString, isWeekend } from '@/utils/formatDate';
 
 export default function AppLayout() {
@@ -22,6 +23,7 @@ export default function AppLayout() {
     ]);
   };
   const { data: goals } = useGoals(false);
+  const { data: todayEntries } = useDayEntriesByDate(todayString());
 
   const todayGoals = useMemo(() => {
     const weekend = isWeekend(todayString());
@@ -32,7 +34,7 @@ export default function AppLayout() {
     });
   }, [goals]);
 
-  useTimerNotification(todayGoals);
+  useTimerNotification(todayGoals, todayEntries ?? []);
 
   useEffect(() => {
     if (!isAuthenticated) {
