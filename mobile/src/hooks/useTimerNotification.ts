@@ -81,7 +81,6 @@ async function setupChannels() {
   await Notifications.setNotificationChannelAsync(NUDGE_CHANNEL_ID, {
     name: 'Task Reminders',
     importance: Notifications.AndroidImportance.HIGH,
-    sound: 'default',
     vibrationPattern: [0, 400, 200, 400, 200, 400],
     enableVibrate: true,
     showBadge: false,
@@ -216,7 +215,7 @@ export function useTimerNotification(todayGoals: Goal[], todayEntries: DayEntry[
       content: {
         title: `⏱ 2 minutes left`,
         body: activeTaskTitle,
-        sound: 'default',
+        sound: true,
         ...(Platform.OS === 'android' && {
           android: { channelId: NUDGE_CHANNEL_ID, color: '#0f766e', smallIcon: 'ic_launcher' },
         }),

@@ -39,7 +39,7 @@ async function scheduleNudgeSlot(goal: any, identifier: string, fireAt: Date): P
     content: {
       title: '⚠️ Task unattended',
       body: `${goal.title} — tap to log or start`,
-      sound: 'default',
+      sound: true,
       ...(Platform.OS === 'android' && {
         android: { channelId: NUDGE_CHANNEL_ID, color: '#f59e0b', smallIcon: 'ic_launcher' },
       }),
