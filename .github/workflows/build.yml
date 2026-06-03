@@ -2,8 +2,11 @@ name: Build & Push Docker Images
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+  workflow_dispatch:
 
 jobs:
   build-and-push:

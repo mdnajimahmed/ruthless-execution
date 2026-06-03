@@ -3,6 +3,8 @@ name: Mobile — Android Build & Release
 on:
   push:
     branches: [main]
+    paths:
+      - 'mobile/**'
   workflow_dispatch:
     inputs:
       release_notes:
