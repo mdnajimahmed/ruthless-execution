@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, TextInput, ScrollView,
-  StyleSheet, SafeAreaView, TouchableOpacity,
+  StyleSheet, TouchableOpacity,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';

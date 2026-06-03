@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, SafeAreaView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { COLORS, SPACING, TYPE, SHADOWS } from '@/config/designTokens';

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, TextInput, ScrollView,
-  StyleSheet, SafeAreaView, TouchableOpacity,
+  StyleSheet, TouchableOpacity,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';

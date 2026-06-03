@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView, RefreshControl,
+  StyleSheet, RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView,
+  StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
