@@ -7,6 +7,7 @@ import { COLORS, TYPE } from '@/config/designTokens';
 import { useAuthStore } from '@/stores/authStore';
 import { FloatingTimerPill } from '@/components/FloatingTimerPill';
 import { useTimerNotification } from '@/hooks/useTimerNotification';
+import { useNotificationSetup } from '@/hooks/useNotificationSetup';
 import { useGoals } from '@/hooks/useGoals';
 import { useDayEntriesByDate } from '@/hooks/useDayEntries';
 import { todayString, isWeekend } from '@/utils/formatDate';
@@ -34,6 +35,7 @@ export default function AppLayout() {
     });
   }, [goals]);
 
+  useNotificationSetup();
   useTimerNotification(todayGoals, todayEntries ?? []);
 
   useEffect(() => {

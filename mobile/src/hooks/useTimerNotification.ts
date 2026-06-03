@@ -130,10 +130,15 @@ async function showScheduleNotif(status: ScheduleStatus) {
     content: {
       title,
       body,
-      sticky: false,
+      sticky: true,  // persistent in tray — user can't swipe away
       priority: Notifications.AndroidNotificationPriority.LOW,
       ...(Platform.OS === 'android' && {
-        android: { channelId: TIMER_CHANNEL_ID, ongoing: false, color: '#0f766e', smallIcon: 'ic_launcher' },
+        android: {
+          channelId: TIMER_CHANNEL_ID,
+          ongoing: true,
+          color: '#0f766e',
+          smallIcon: 'ic_launcher',
+        },
       }),
     },
     trigger: null,
