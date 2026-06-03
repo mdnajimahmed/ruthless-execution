@@ -6,63 +6,45 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const SETUP_DONE_KEY = 'rex-notif-setup-v1';
 
 async function runSetup(): Promise<void> {
+  // Check real system permission state first.
+  // If already granted we never show any dialog — regardless of AsyncStorage.
+  const { status: currentStatus } = await Notifications.getPermissionsAsync();
+
+  if (currentStatus === 'granted') {
+    await AsyncStorage.setItem(SETUP_DONE_KEY, '1');
+    return;
+  }
+
+  // Already walked through setup once (user chose Skip) — don't repeat.
   const already = await AsyncStorage.getItem(SETUP_DONE_KEY);
   if (already) return;
 
-  // 1. Request notification permission (handles POST_NOTIFICATIONS on Android 13+)
+  // First time AND permission not yet granted — request it.
   const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') return;
+  if (status !== 'granted') {
+    await AsyncStorage.setItem(SETUP_DONE_KEY, '1');
+    return;
+  }
 
   if (Platform.OS !== 'android') {
     await AsyncStorage.setItem(SETUP_DONE_KEY, '1');
     return;
   }
 
-  // 2. Battery optimization exemption — most important step for OEM Android
-  //    (Samsung, Xiaomi, Huawei, OPPO all kill background alarms without this)
+  // Battery optimization — single one-time ask, no repeat.
   await new Promise<void>((resolve) => {
     Alert.alert(
-      'Keep reminders reliable',
-      'To ensure task nudges and timer alerts fire on time even when your phone is idle or the screen is off, please tap "Allow" on the next screen.',
+      'One last thing',
+      'Disable battery optimization for this app so nudges fire on time when your screen is off.',
       [
-        {
-          text: 'Skip',
-          style: 'cancel',
-          onPress: resolve,
-        },
+        { text: 'Skip', style: 'cancel', onPress: resolve },
         {
           text: 'Allow',
           onPress: async () => {
             try {
-              // Opens "Ignore battery optimizations?" system dialog directly
               await Linking.openURL(
-                `android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS?package=com.turinghatch.rex`,
+                'android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS?package=com.turinghatch.rex',
               );
-            } catch {
-              // Fallback: open app-info page where user can find battery settings
-              await Linking.openSettings();
-            }
-            resolve();
-          },
-        },
-      ],
-    );
-  });
-
-  // 3. Exact alarm permission — Android 12+ requires explicit grant for SCHEDULE_EXACT_ALARM
-  //    expo-notifications will auto-prompt when scheduling, but we surface it early
-  //    so users aren't surprised mid-session.
-  await new Promise<void>((resolve) => {
-    Alert.alert(
-      'Allow exact alarms',
-      'To fire nudge alerts at precisely the right time, this app needs the "Alarms & Reminders" permission.',
-      [
-        { text: 'Later', style: 'cancel', onPress: resolve },
-        {
-          text: 'Open Settings',
-          onPress: async () => {
-            try {
-              await Linking.openURL('android.settings.REQUEST_SCHEDULE_EXACT_ALARM');
             } catch {
               await Linking.openSettings();
             }
