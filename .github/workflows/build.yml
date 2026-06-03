@@ -49,6 +49,7 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          provenance: false
           tags: ivplay4689/turinghatch:${{ steps.version.outputs.app_name }}-be-${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -60,6 +61,7 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          provenance: false
           # VITE_API_URL is baked into the JS bundle at build time by Vite.
           # Set this secret in GitHub repo Settings → Secrets → Actions.
           build-args: |
