@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, ScrollView, Text, StyleSheet, SafeAreaView, RefreshControl,
 } from 'react-native';
@@ -33,6 +33,9 @@ export default function TodayScreen() {
   const { activeTaskId } = useTimerStore();
 
   const isLoading = goalsLoading || entriesLoading;
+
+  const scrollRef = useRef<ScrollView>(null);
+  const nextCardY = useRef<number>(0);
 
   const goToPrev = useCallback(() => setViewDate((d) => subtractDay(d)), []);
   const goToNext = useCallback(() => {
@@ -70,6 +73,15 @@ export default function TodayScreen() {
   const nextGoalId = isViewingToday
     ? todayGoals.find((g) => g.endTime > currentHHMM)?.id
     : null;
+
+  // Scroll to UP NEXT card once data is ready
+  useEffect(() => {
+    if (isLoading || !nextGoalId) return;
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, nextCardY.current - 16), animated: true });
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [isLoading, nextGoalId]);
 
   function getTimeState(goal: Goal): 'past' | 'next' | 'upcoming' | undefined {
     if (!isViewingToday) return undefined;
@@ -128,6 +140,7 @@ export default function TodayScreen() {
       <GestureDetector gesture={swipeGesture}>
         <Animated.View style={styles.flex}>
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={styles.scroll}
             refreshControl={
               <RefreshControl
@@ -154,20 +167,26 @@ export default function TodayScreen() {
             )}
 
             {!isLoading && todayGoals.map((goal) => {
-              const entry = entryMap.get(goal.id);
+              const entry     = entryMap.get(goal.id);
+              const timeState = getTimeState(goal);
+              const isNext    = timeState === 'next';
               return (
-                <GoalCard
+                <View
                   key={goal.id}
-                  goal={goal}
-                  entry={entry}
-                  hitRate={buildHitRate(entry)}
-                  isReadOnly={isReadOnly}
-                  isTimerActive={activeTaskId === goal.id}
-                  timeState={getTimeState(goal)}
-                  onRun={() => handleRun(goal)}
-                  onLog={() => handleLog(goal)}
-                  onPress={() => handleGoalPress(goal)}
-                />
+                  onLayout={isNext ? (e) => { nextCardY.current = e.nativeEvent.layout.y; } : undefined}
+                >
+                  <GoalCard
+                    goal={goal}
+                    entry={entry}
+                    hitRate={buildHitRate(entry)}
+                    isReadOnly={isReadOnly}
+                    isTimerActive={activeTaskId === goal.id}
+                    timeState={timeState}
+                    onRun={() => handleRun(goal)}
+                    onLog={() => handleLog(goal)}
+                    onPress={() => handleGoalPress(goal)}
+                  />
+                </View>
               );
             })}
           </ScrollView>

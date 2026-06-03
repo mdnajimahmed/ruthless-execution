@@ -1,6 +1,4 @@
 import { Platform } from 'react-native';
-import * as TaskManager from 'expo-task-manager';
-import * as BackgroundFetch from 'expo-background-fetch';
 import * as Notifications from 'expo-notifications';
 import { getGoals } from '@/api/goals';
 import { getDayEntriesByDateRange } from '@/api/dayEntries';
@@ -51,16 +49,8 @@ async function scheduleNudgeSlot(goal: any, identifier: string, fireAt: Date): P
   });
 }
 
-// ─── core scheduling ─────────────────────────────────────────────────────────
+// ─── core scheduling (used by both foreground hook and background task) ───────
 
-/**
- * Each unattended goal gets exactly 2 nudge slots: rex-nudge-{goalId}-0 and -1.
- * We check pending notifications first — if a slot is already pending we don't
- * reschedule it. This enforces the 2-per-task cap naturally: once both fire,
- * there are no more identifiers to schedule.
- *
- * For attended goals we cancel any remaining pending slots immediately.
- */
 export async function rescheduleAllNudges(
   goals: any[],
   entries: any[],
@@ -75,95 +65,89 @@ export async function rescheduleAllNudges(
     const isActive = activeTaskId === goal.id;
 
     if (hasEntry || isActive) {
-      // Goal is attended — cancel any pending nudge slots
       const toCancel = all.filter((n) => n.identifier.startsWith(`rex-nudge-${goal.id}-`));
       await Promise.all(toCancel.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
       continue;
     }
 
     const endDate = parseHHMMToDate(goal.endTime);
-    if (now >= endDate) continue; // window has passed
+    if (now >= endDate) continue;
 
     const startDate = parseHHMMToDate(goal.startTime);
-    // First nudge: at startTime if future, otherwise 1 min from now
-    const firstFire = now < startDate ? startDate : new Date(now.getTime() + 60_000);
+    const firstFire  = now < startDate ? startDate : new Date(now.getTime() + 60_000);
     const secondFire = new Date(firstFire.getTime() + 3 * 60_000);
 
     const slot0 = `rex-nudge-${goal.id}-0`;
     const slot1 = `rex-nudge-${goal.id}-1`;
 
-    // Only schedule slots that aren't already pending — this enforces the 2-cap
-    if (!pendingIds.has(slot0) && firstFire < endDate) {
-      await scheduleNudgeSlot(goal, slot0, firstFire);
-    }
-    if (!pendingIds.has(slot1) && secondFire < endDate) {
-      await scheduleNudgeSlot(goal, slot1, secondFire);
-    }
+    if (!pendingIds.has(slot0) && firstFire < endDate)  await scheduleNudgeSlot(goal, slot0, firstFire);
+    if (!pendingIds.has(slot1) && secondFire < endDate) await scheduleNudgeSlot(goal, slot1, secondFire);
   }
 }
 
-// ─── background task ─────────────────────────────────────────────────────────
-
-// defineTask MUST be called at module level
-TaskManager.defineTask(BACKGROUND_NUDGE_TASK, async () => {
-  try {
-    const today = todayDateString();
-    const weekend = isWeekend();
-    const activeTaskId = await readActiveTaskIdFromStorage();
-
-    let allGoals: any[];
-    let entries: any[];
-
-    try {
-      // Fresh data from API — most reliable
-      [allGoals, entries] = await Promise.all([
-        getGoals({ completed: false }),
-        getDayEntriesByDateRange(today, today),
-      ]);
-      // Keep cache fresh for next time network is unavailable
-      persistGoalsForBackground(allGoals);
-      persistEntriesForBackground(entries);
-    } catch {
-      // Network unavailable — fall back to last cached data
-      [allGoals, entries] = await Promise.all([
-        readGoalsFromStorage(),
-        readEntriesFromStorage(),
-      ]);
-    }
-
-    // Filter to today's goals that are in or starting within the next 15 min
-    const now = new Date();
-    const windowEnd = new Date(now.getTime() + 15 * 60_000);
-
-    const relevantGoals = allGoals.filter((g) => {
-      if (g.completedAt) return false;
-      if (!g.isWeekdayGoal && !g.isWeekendGoal) return true; // every-day goal
-      return weekend ? g.isWeekendGoal : g.isWeekdayGoal;
-    }).filter((g) => {
-      const startDate = parseHHMMToDate(g.startTime);
-      const endDate   = parseHHMMToDate(g.endTime);
-      // In window now, or starting within the next 15 min
-      return now < endDate && startDate < windowEnd;
-    });
-
-    await rescheduleAllNudges(relevantGoals, entries, activeTaskId);
-    return BackgroundFetch.BackgroundFetchResult.NewData;
-  } catch {
-    return BackgroundFetch.BackgroundFetchResult.Failed;
-  }
-});
+// ─── background task — graceful degradation if native modules unavailable ────
 
 export async function registerBackgroundNudgeTask(): Promise<void> {
   try {
+    const TaskManager    = require('expo-task-manager');
+    const BackgroundFetch = require('expo-background-fetch');
+
+    // defineTask must be called before registerTaskAsync
+    if (!TaskManager.isTaskDefined(BACKGROUND_NUDGE_TASK)) {
+      TaskManager.defineTask(BACKGROUND_NUDGE_TASK, async () => {
+        try {
+          const today   = todayDateString();
+          const weekend = isWeekend();
+          const activeTaskId = await readActiveTaskIdFromStorage();
+
+          let allGoals: any[], entries: any[];
+          try {
+            [allGoals, entries] = await Promise.all([
+              getGoals({ completed: false }),
+              getDayEntriesByDateRange(today, today),
+            ]);
+            persistGoalsForBackground(allGoals);
+            persistEntriesForBackground(entries);
+          } catch {
+            [allGoals, entries] = await Promise.all([
+              readGoalsFromStorage(),
+              readEntriesFromStorage(),
+            ]);
+          }
+
+          const now       = new Date();
+          const windowEnd = new Date(now.getTime() + 15 * 60_000);
+
+          const relevantGoals = allGoals
+            .filter((g: any) => {
+              if (g.completedAt) return false;
+              if (!g.isWeekdayGoal && !g.isWeekendGoal) return true;
+              return weekend ? g.isWeekendGoal : g.isWeekdayGoal;
+            })
+            .filter((g: any) => {
+              const startDate = parseHHMMToDate(g.startTime);
+              const endDate   = parseHHMMToDate(g.endTime);
+              return now < endDate && startDate < windowEnd;
+            });
+
+          await rescheduleAllNudges(relevantGoals, entries, activeTaskId);
+          return BackgroundFetch.BackgroundFetchResult.NewData;
+        } catch {
+          return BackgroundFetch.BackgroundFetchResult.Failed;
+        }
+      });
+    }
+
     const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_NUDGE_TASK);
     if (!isRegistered) {
       await BackgroundFetch.registerTaskAsync(BACKGROUND_NUDGE_TASK, {
-        minimumInterval: 15 * 60, // OS minimum
+        minimumInterval: 15 * 60,
         stopOnTerminate: false,
         startOnBoot: true,
       });
     }
   } catch {
-    // Background fetch not supported on this device
+    // expo-task-manager / expo-background-fetch not available (e.g. Expo Go)
+    // Background nudge rescheduling won't run — foreground hook still works
   }
 }
