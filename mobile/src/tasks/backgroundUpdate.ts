@@ -11,7 +11,7 @@ import {
 export const BACKGROUND_NUDGE_TASK = 'rex-background-nudge';
 
 const NUDGE_CHANNEL_ID = 'task_nudge';
-const MAX_NUDGE_SLOTS = 6; // 6 × 3 min = 18 min coverage per reschedule cycle
+const MAX_NUDGE_SLOTS = 2; // 2 nudges per task per reschedule cycle
 
 function parseHHMMToDate(hhMM: string): Date {
   const [h, m] = hhMM.split(':').map(Number);
