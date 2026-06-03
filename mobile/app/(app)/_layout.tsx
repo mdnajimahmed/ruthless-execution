@@ -10,8 +10,6 @@ import { useTimerNotification } from '@/hooks/useTimerNotification';
 import { useGoals } from '@/hooks/useGoals';
 import { useDayEntriesByDate } from '@/hooks/useDayEntries';
 import { todayString, isWeekend } from '@/utils/formatDate';
-// Must be imported here so TaskManager.defineTask runs before any registerTaskAsync call
-import { registerBackgroundNudgeTask } from '@/tasks/backgroundUpdate';
 
 export default function AppLayout() {
   const insets = useSafeAreaInsets();
@@ -37,10 +35,6 @@ export default function AppLayout() {
   }, [goals]);
 
   useTimerNotification(todayGoals, todayEntries ?? []);
-
-  useEffect(() => {
-    registerBackgroundNudgeTask();
-  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {

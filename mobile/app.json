@@ -15,13 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.turinghatch.rex",
-      "backgroundModes": ["fetch"]
+      "bundleIdentifier": "com.turinghatch.rex"
     },
     "android": {
       "package": "com.turinghatch.rex",
       "usesCleartextTraffic": true,
-      "permissions": ["SCHEDULE_EXACT_ALARM", "RECEIVE_BOOT_COMPLETED"],
       "adaptiveIcon": {
         "backgroundColor": "#0f766e",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -45,8 +43,6 @@
           "imageWidth": 200
         }
       ],
-      "expo-task-manager",
-      "expo-background-fetch",
       "expo-audio",
       [
         "expo-notifications",

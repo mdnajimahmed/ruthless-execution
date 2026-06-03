@@ -6,11 +6,6 @@ import { router } from 'expo-router';
 import { useTimerStore } from '@/stores/timerStore';
 import { formatSeconds } from '@/utils/formatTime';
 import { rescheduleAllNudges } from '@/tasks/backgroundUpdate';
-import {
-  persistGoalsForBackground,
-  persistEntriesForBackground,
-  persistActiveTaskIdForBackground,
-} from '@/utils/goalStorage';
 import type { Goal } from '@/types/goal';
 import type { DayEntry } from '@/types/dayEntry';
 
@@ -246,9 +241,6 @@ export function useTimerNotification(todayGoals: Goal[], todayEntries: DayEntry[
     isReschedulingRef.current = true;
     try {
       await rescheduleAllNudges(todayGoals, todayEntries, activeTaskId);
-      persistGoalsForBackground(todayGoals);
-      persistEntriesForBackground(todayEntries);
-      persistActiveTaskIdForBackground(activeTaskId);
     } finally {
       isReschedulingRef.current = false;
     }
