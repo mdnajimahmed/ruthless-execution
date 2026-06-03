@@ -67,7 +67,8 @@
     "expo:prebuild": "expo prebuild --no-install --clean",
     "expo:prebuild:android": "expo prebuild --platform android --no-install --clean",
     "expo:prebuild:ios": "expo prebuild --platform ios --no-install --clean",
-    "build:android": "cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon",
+    "build:android": "export $(grep -v '^#' .env | grep '=' | xargs) && rm -rf android && expo prebuild --no-install --clean && cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon",
+    "build:android:prod": "EXPO_PUBLIC_API_URL=https://turinghatch.com/ruthless-execution/api npm run build:android",
     "build:ios": "xcodebuild -workspace ios/ruthless-execution.xcworkspace -scheme ruthless-execution -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' archive -archivePath ios/build/ruthless-execution.xcarchive CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
   },
   "private": true
