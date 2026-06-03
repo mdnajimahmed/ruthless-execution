@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { X } from 'lucide-react-native';
+import { StatusBar } from 'expo-status-bar';
 import { COLORS, SPACING, TYPE, SHADOWS } from '@/config/designTokens';
 import { useTimerStore } from '@/stores/timerStore';
 import { formatSeconds } from '@/utils/formatTime';
@@ -83,6 +84,7 @@ export default function TimerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
       <View style={styles.topBar}>
         <TouchableOpacity
           onPress={handleMinimize}

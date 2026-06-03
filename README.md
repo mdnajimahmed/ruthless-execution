@@ -52,3 +52,6 @@ docker compose -f docker-compose.images.yml -p ruthless-execution exec be npm ru
 ./scripts/dev
 dev@local.dev
 dev123456
+
+
+ANDROID_HOME=$HOME/Library/Android/sdk npm run build:android

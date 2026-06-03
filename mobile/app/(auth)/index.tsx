@@ -126,7 +126,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.teal50 },
+  safe: { flex: 1, backgroundColor: COLORS.teal700 },
   flex: { flex: 1 },
   scroll: {
     flexGrow: 1,

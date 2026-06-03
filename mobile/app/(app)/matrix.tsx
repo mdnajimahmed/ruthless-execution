@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, RefreshControl,
@@ -22,6 +22,7 @@ import type { EisenhowerTask } from '@/types/eisenhower';
 const QUADRANTS: Quadrant[] = ['do-first', 'schedule', 'delegate', 'eliminate'];
 
 export default function MatrixScreen() {
+  const insets = useSafeAreaInsets();
   const [activeQuadrant, setActiveQuadrant] = useState<Quadrant>('do-first');
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -52,8 +53,8 @@ export default function MatrixScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
+      <View style={[styles.header, { paddingTop: SPACING.s4 + insets.top }]}>
         <Text style={styles.headerTitle}>MATRIX</Text>
         <TouchableOpacity
           onPress={() => router.push({
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: COLORS.teal700,
     paddingHorizontal: SPACING.s4,
-    paddingVertical: SPACING.s4,
+    paddingBottom: SPACING.s4,
     ...SHADOWS.sm,
   },
   headerTitle: {

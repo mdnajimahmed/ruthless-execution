@@ -123,7 +123,7 @@ export default function TodayScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
       <DateNavHeader
         date={viewDate}
         onPrev={goToPrev}

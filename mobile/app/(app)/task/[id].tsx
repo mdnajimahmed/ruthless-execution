@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View, Text, TextInput, ScrollView,
   StyleSheet, TouchableOpacity, Alert,
@@ -32,6 +32,7 @@ type FormValues = {
 const QUADRANTS: Quadrant[] = ['do-first', 'schedule', 'delegate', 'eliminate'];
 
 export default function TaskDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { id, quadrant: defaultQuadrant } = useLocalSearchParams<{
     id: string;
     quadrant?: Quadrant;
@@ -113,8 +114,8 @@ export default function TaskDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
+      <View style={[styles.header, { paddingTop: SPACING.s4 + insets.top }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.teal700,
     paddingHorizontal: SPACING.s4,
-    paddingVertical: SPACING.s4,
+    paddingBottom: SPACING.s4,
     ...SHADOWS.sm,
   },
   backBtn: {

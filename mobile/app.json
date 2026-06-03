@@ -17,6 +17,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.turinghatch.rex"
     },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#0f766e",
+      "translucent": false
+    },
     "android": {
       "package": "com.turinghatch.rex",
       "usesCleartextTraffic": true,

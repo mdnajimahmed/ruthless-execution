@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View, Text, TextInput, ScrollView,
   StyleSheet, TouchableOpacity,
@@ -32,6 +32,7 @@ function isValidDate(d: string): boolean {
 }
 
 export default function AddGoalScreen() {
+  const insets = useSafeAreaInsets();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState('07:00');
@@ -98,8 +99,8 @@ export default function AddGoalScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
+      <View style={[styles.header, { paddingTop: SPACING.s4 + insets.top }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.teal700,
     paddingHorizontal: SPACING.s4,
-    paddingVertical: SPACING.s4,
+    paddingBottom: SPACING.s4,
     ...SHADOWS.sm,
   },
   backBtn: {

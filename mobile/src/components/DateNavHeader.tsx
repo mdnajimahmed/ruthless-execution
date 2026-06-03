@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, TYPE, SHADOWS } from '@/config/designTokens';
 import { formatDateLabel } from '@/utils/formatDate';
 
@@ -11,8 +12,9 @@ export interface DateNavHeaderProps {
 }
 
 export function DateNavHeader({ date, onPrev, onNext, canGoNext }: DateNavHeaderProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: SPACING.s4 + insets.top }]}>
       <TouchableOpacity
         onPress={onPrev}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -44,7 +46,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: COLORS.teal700,
     paddingHorizontal: SPACING.s4,
-    paddingVertical: SPACING.s4,
+    paddingBottom: SPACING.s4,
     ...SHADOWS.sm,
   },
   dateLabel: {

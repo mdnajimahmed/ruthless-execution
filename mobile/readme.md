@@ -32,3 +32,4 @@ The release will appear at: `github.com/<your-org>/month-goal-tracker/releases` 
 
 
 mobile/android/app/build/outputs/apk/release/app-release.apk
+cd /Users/najim/Documents/work/github/month-goal-tracker/mobile/android && ANDROID_HOME=$HOME/Library/Android/sdk EXPO_PUBLIC_API_URL=http://192.168.100.181:3002/api ./gradlew assembleRelease --no-daemon
