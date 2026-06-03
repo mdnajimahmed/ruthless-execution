@@ -1,4 +1,4 @@
-name: Mobile — Build & Release
+name: Mobile — Android Build & Release
 
 on:
   push:
@@ -14,17 +14,9 @@ permissions:
   contents: write
 
 jobs:
-  # ──────────────────────────────────────────────
-  # Android APK
-  # ──────────────────────────────────────────────
   build-android:
     name: Android APK
     runs-on: ubuntu-latest
-    outputs:
-      version:  ${{ steps.version.outputs.version }}
-      build:    ${{ steps.version.outputs.build }}
-      tag:      ${{ steps.version.outputs.tag }}
-      apk_name: ${{ steps.version.outputs.apk_name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -42,17 +34,17 @@ jobs:
 
       - name: Install dependencies
         working-directory: mobile
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Read version
         id: version
         run: |
           VERSION=$(node -e "console.log(require('./mobile/app.json').expo.version)")
           BUILD=${{ github.run_number }}
-          echo "version=$VERSION"           >> $GITHUB_OUTPUT
-          echo "build=$BUILD"               >> $GITHUB_OUTPUT
+          echo "version=$VERSION"  >> $GITHUB_OUTPUT
+          echo "build=$BUILD"      >> $GITHUB_OUTPUT
           echo "tag=mobile-v${VERSION}-build.${BUILD}" >> $GITHUB_OUTPUT
-          echo "apk_name=ruthless-execution-android-v${VERSION}-${BUILD}.apk" >> $GITHUB_OUTPUT
+          echo "apk_name=ruthless-execution-v${VERSION}-build${BUILD}.apk" >> $GITHUB_OUTPUT
 
       - uses: android-actions/setup-android@v3
 
@@ -64,15 +56,15 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('mobile/android/**/*.gradle*') }}
+          key: gradle-${{ hashFiles('mobile/package-lock.json') }}
           restore-keys: gradle-
 
-      - name: Write production .env
+      - name: Write .env
         run: echo "EXPO_PUBLIC_API_URL=https://turinghatch.com/ruthless-execution/api" > mobile/.env
 
       - name: Prebuild Android
         working-directory: mobile
-        run: npm run expo:prebuild:android
+        run: expo prebuild --platform android --no-install --clean
         env:
           EXPO_PUBLIC_API_URL: https://turinghatch.com/ruthless-execution/api
 
@@ -81,9 +73,12 @@ jobs:
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.version.outputs.build }}/" mobile/android/app/build.gradle
           sed -i 's/versionName "[^"]*"/versionName "${{ steps.version.outputs.version }}"/' mobile/android/app/build.gradle
 
-      - name: Build Android APK
-        working-directory: mobile
-        run: npm run build:android
+      - name: Build APK
+        working-directory: mobile/android
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
         env:
           EXPO_PUBLIC_API_URL: https://turinghatch.com/ruthless-execution/api
 
@@ -98,135 +93,27 @@ jobs:
           path: ${{ steps.version.outputs.apk_name }}
           retention-days: 7
 
-  # ──────────────────────────────────────────────
-  # iOS IPA (macos runner, unsigned — installable
-  # via AltStore / sideloading tools)
-  # ──────────────────────────────────────────────
-  build-ios:
-    name: iOS IPA
-    runs-on: macos-latest
-    outputs:
-      ipa_name: ${{ steps.version.outputs.ipa_name }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Install dependencies
-        working-directory: mobile
-        run: npm ci
-
-      - name: Read version
-        id: version
-        run: |
-          VERSION=$(node -e "console.log(require('./mobile/app.json').expo.version)")
-          BUILD=${{ github.run_number }}
-          echo "version=$VERSION"  >> $GITHUB_OUTPUT
-          echo "ipa_name=ruthless-execution-ios-v${VERSION}-${BUILD}.ipa" >> $GITHUB_OUTPUT
-
-      - name: Write production .env
-        run: echo "EXPO_PUBLIC_API_URL=https://turinghatch.com/ruthless-execution/api" > mobile/.env
-
-      - name: Prebuild iOS
-        working-directory: mobile
-        run: npm run expo:prebuild:ios
-        env:
-          EXPO_PUBLIC_API_URL: https://turinghatch.com/ruthless-execution/api
-
-      - name: Install CocoaPods
-        working-directory: mobile/ios
-        run: pod install
-
-      - name: Build iOS archive
-        working-directory: mobile
-        run: npm run build:ios
-        env:
-          EXPO_PUBLIC_API_URL: https://turinghatch.com/ruthless-execution/api
-
-      - name: Export IPA (unsigned)
-        run: |
-          cat > /tmp/ExportOptions.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>method</key><string>development</string>
-            <key>compileBitcode</key><false/>
-            <key>signingStyle</key><string>manual</string>
-          </dict></plist>
-          EOF
-          xcodebuild -exportArchive \
-            -archivePath mobile/ios/build/ruthless-execution.xcarchive \
-            -exportPath mobile/ios/build/export \
-            -exportOptionsPlist /tmp/ExportOptions.plist \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
-            || true   # export may warn about signing; archive is still usable
-
-          # Fallback: zip the .app from the archive directly if export failed
-          APP=$(find mobile/ios/build/ruthless-execution.xcarchive -name "*.app" | head -1)
-          if [ -f "mobile/ios/build/export/ruthless-execution.ipa" ]; then
-            cp mobile/ios/build/export/ruthless-execution.ipa ${{ steps.version.outputs.ipa_name }}
-          else
-            mkdir -p Payload && cp -r "$APP" Payload/
-            zip -r ${{ steps.version.outputs.ipa_name }} Payload
-            rm -rf Payload
-          fi
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ios-ipa
-          path: ${{ steps.version.outputs.ipa_name }}
-          retention-days: 7
-
-  # ──────────────────────────────────────────────
-  # GitHub Release — attaches both artifacts
-  # ──────────────────────────────────────────────
-  release:
-    name: GitHub Release
-    needs: [build-android, build-ios]
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: android-apk
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: ios-ipa
-
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.build-android.outputs.tag }}
-          name: "Ruthless Execution v${{ needs.build-android.outputs.version }} (build ${{ needs.build-android.outputs.build }})"
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Ruthless Execution v${{ steps.version.outputs.version }} (build ${{ steps.version.outputs.build }})"
           body: |
-            ## Ruthless Execution — Mobile Release
+            ## Ruthless Execution — Android Release
 
             | | |
             |---|---|
-            | **Version** | `${{ needs.build-android.outputs.version }}` |
-            | **Build**   | `#${{ needs.build-android.outputs.build }}` |
+            | **Version** | `${{ steps.version.outputs.version }}` |
+            | **Build**   | `#${{ steps.version.outputs.build }}` |
             | **API**     | `https://turinghatch.com/ruthless-execution/api` |
             | **Commit**  | `${{ github.sha }}` |
 
-            ### Android
-            1. Download **`${{ needs.build-android.outputs.apk_name }}`**
-            2. **Settings → Apps → Install unknown apps** → enable for your browser
+            ### Install
+            1. Download **`${{ steps.version.outputs.apk_name }}`**
+            2. Settings → Apps → Install unknown apps → enable for your browser
             3. Open the APK → Install
 
-            ### iOS (sideload)
-            1. Download **`${{ needs.build-ios.outputs.ipa_name }}`**
-            2. Install via [AltStore](https://altstore.io) or [Sideloadly](https://sideloadly.io)
-            > For OTA/TestFlight distribution, add Apple signing secrets to this repo — see README.
-
             ${{ github.event.inputs.release_notes }}
-          files: |
-            ${{ needs.build-android.outputs.apk_name }}
-            ${{ needs.build-ios.outputs.ipa_name }}
+          files: ${{ steps.version.outputs.apk_name }}
           draft: false
           prerelease: false
