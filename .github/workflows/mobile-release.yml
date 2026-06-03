@@ -66,7 +66,7 @@ jobs:
 
       - name: Prebuild Android
         working-directory: mobile
-        run: expo prebuild --platform android --no-install --clean
+        run: npx expo prebuild --platform android --no-install --clean
         env:
           EXPO_PUBLIC_API_URL: https://turinghatch.com/ruthless-execution/api
 
