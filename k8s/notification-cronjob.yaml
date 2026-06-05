@@ -1,0 +1,66 @@
+# Goal notification sender — runs every minute.
+# Finds goals starting at the current minute (per user timezone) and sends
+# Expo push notifications via the Expo Push API → FCM/APNs.
+#
+# Deploy:
+#   kubectl apply -f k8s/notification-cronjob.yaml
+#
+# Secrets required in the same namespace:
+#   kubectl create secret generic rex-backend-secrets \
+#     --from-literal=DATABASE_URL='postgresql://...' \
+#     --from-literal=EXPO_ACCESS_TOKEN='your-expo-token'   # optional, increases rate limits
+#
+# Image: CI pushes ivplay4689/turinghatch:month-goal-tracker-be-latest on every main-branch build.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rex-goal-notifications
+  # Change to your actual namespace
+  namespace: default
+  labels:
+    app: rex
+    component: notification-sender
+spec:
+  # Every minute
+  schedule: "* * * * *"
+  # Kill the job if it hasn't finished before the next tick (55 s headroom)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      template:
+        metadata:
+          labels:
+            app: rex
+            component: notification-sender
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: notification-sender
+              image: ivplay4689/turinghatch:month-goal-tracker-be-latest
+              imagePullPolicy: Always
+              command: ["node", "dist/scripts/send-notifications.js"]
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
+              env:
+                - name: NODE_ENV
+                  value: "production"
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: rex-backend-secrets
+                      key: DATABASE_URL
+                - name: EXPO_ACCESS_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: rex-backend-secrets
+                      key: EXPO_ACCESS_TOKEN
+                      optional: true

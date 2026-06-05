@@ -11,18 +11,46 @@ datasource db {
 }
 
 model User {
-  id                String          @id @default(uuid())
-  email             String          @unique
-  passwordHash      String
-  resetToken        String?
-  resetTokenExpiry  DateTime?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  goals             Goal[]
-  eisenhowerTasks   EisenhowerTask[]
-  backlogItems      BacklogItem[]
-  
+  id                  String           @id @default(uuid())
+  email               String           @unique
+  passwordHash        String
+  resetToken          String?
+  resetTokenExpiry    DateTime?
+  refreshToken        String?          @unique  // SHA-256 hash of the issued refresh token
+  refreshTokenExpiry  DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  goals               Goal[]
+  eisenhowerTasks     EisenhowerTask[]
+  backlogItems        BacklogItem[]
+  pushTokens          PushToken[]
+
   @@index([email])
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   // 'ios' | 'android'
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model NotificationLog {
+  id     String   @id @default(uuid())
+  goalId String
+  goal   Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  date   String   // "YYYY-MM-DD" in user's local timezone
+  type   String   // 'goal_start'
+  sentAt DateTime @default(now())
+
+  @@unique([goalId, date, type])
+  @@index([date])
 }
 
 model Goal {
@@ -40,8 +68,9 @@ model Goal {
   isWeekendGoal  Boolean   @default(false)
   isWeekdayGoal  Boolean   @default(false)
   completedAt     DateTime? // When goal was completed
-  dayEntries      DayEntry[]
-  
+  dayEntries        DayEntry[]
+  notificationLogs  NotificationLog[]
+
   @@index([userId])
   @@index([createdAt])
   @@index([completedAt])

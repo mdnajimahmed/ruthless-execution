@@ -32,6 +32,12 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env.production
+
+# Firebase — injected at build time via GOOGLE_SERVICES_JSON secret
+google-services.json
+GoogleService-Info.plist
+*-firebase-adminsdk-*.json
 
 # typescript
 *.tsbuildinfo

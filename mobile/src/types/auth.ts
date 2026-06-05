@@ -5,13 +5,17 @@ export interface LoginRequest {
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   user: {
     id: string;
     email: string;
   };
 }
 
+// Backend returns { user: { id, email } }
 export interface VerifyResponse {
-  id: string;
-  email: string;
+  user: {
+    id: string;
+    email: string;
+  };
 }

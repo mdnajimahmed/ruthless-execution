@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { randomBytes, createHash } from 'crypto';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -9,18 +10,22 @@ export interface AuthRequest extends Request {
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
 
 export function generateToken(userId: string, email: string): string {
-  return jwt.sign(
-    { userId, email },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
+  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '1h' });
+}
+
+export function generateRefreshToken(): string {
+  return randomBytes(32).toString('hex'); // 64-char hex, stored raw on client
+}
+
+export function hashRefreshToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 export function verifyToken(token: string): { userId: string; email: string } | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -31,7 +36,7 @@ export function authenticateToken(
   next: NextFunction
 ): void {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     res.status(401).json({ error: 'Authentication required' });
@@ -40,7 +45,7 @@ export function authenticateToken(
 
   const decoded = verifyToken(token);
   if (!decoded) {
-    res.status(403).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: 'Invalid or expired token' });
     return;
   }
 

@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
-import { login, verifyToken, forgotPassword } from '@/api/auth';
+import { login, verifyToken, forgotPassword, logout } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
 import type { LoginRequest } from '@/types/auth';
 
@@ -9,7 +9,12 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => login(data),
     onSuccess: async (response) => {
-      await setAuth(response.token, response.user.id, response.user.email);
+      await setAuth(
+        response.token,
+        response.refreshToken,
+        response.user.id,
+        response.user.email,
+      );
     },
   });
 }
@@ -20,22 +25,38 @@ export function useForgotPassword() {
   });
 }
 
+export function useLogout() {
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+  return async () => {
+    const refreshToken = await SecureStore.getItemAsync('refresh_token');
+    await logout(refreshToken ?? undefined);
+    await clearAuth();
+  };
+}
+
 export function useVerifyAndRestoreSession() {
   const { setAuth, clearAuth, restoreAuth } = useAuthStore();
   return async (): Promise<boolean> => {
-    const token = await SecureStore.getItemAsync('auth_token');
-    if (!token) return false;
+    const hasToken = !!(await SecureStore.getItemAsync('auth_token'));
+    if (!hasToken) return false;
+
     try {
-      const user = await verifyToken();
-      await setAuth(token, user.id, user.email);
+      // The client interceptor auto-refreshes on 401, so this succeeds
+      // even when the access token is expired, as long as the refresh token is valid.
+      const { user } = await verifyToken();
+
+      // Read tokens again — interceptor may have rotated them
+      const token = (await SecureStore.getItemAsync('auth_token'))!;
+      const refreshToken = (await SecureStore.getItemAsync('refresh_token')) ?? '';
+      await setAuth(token, refreshToken, user.id, user.email);
       return true;
     } catch (error: any) {
-      // Only force logout on explicit 401 — network errors keep the stored session
       if (error?.response?.status === 401) {
+        // Both access AND refresh tokens are invalid/expired — must re-login
         await clearAuth();
         return false;
       }
-      // Backend unreachable: restore from SecureStore optimistically
+      // Network unreachable — restore optimistically from SecureStore
       return restoreAuth();
     }
   };

@@ -1,63 +1,23 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { Platform, AppState } from 'react-native';
+import { Platform, AppState, Vibration } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useAudioPlayer } from 'expo-audio';
 import { router } from 'expo-router';
 import { useTimerStore } from '@/stores/timerStore';
 import { formatSeconds } from '@/utils/formatTime';
-import { rescheduleAllNudges } from '@/tasks/backgroundUpdate';
 import type { Goal } from '@/types/goal';
 import type { DayEntry } from '@/types/dayEntry';
 
-const TIMER_CHANNEL_ID   = 'timer_v2';
-const NUDGE_CHANNEL_ID   = 'task_nudge';
-const TIMER_NOTIF_ID     = 'rex-timer';
-const SCHEDULE_NOTIF_ID  = 'rex-schedule';
+const TIMER_CHANNEL_ID     = 'timer_v2';
+const NUDGE_CHANNEL_ID     = 'task_nudge';
+const ALARM_CHANNEL_ID     = 'task_alarm';
+const TIMER_NOTIF_ID       = 'rex-timer';
+const STICKY_NOTIF_ID      = 'rex-sticky';
 const TIMER_ALERT_NOTIF_ID = 'rex-timer-alert';
 
 const ALERT_SOUND = require('../../assets/sounds/alert.mp3');
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-function parseTimeToMinutes(t: string): number {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function nowInMinutes(): number {
-  const d = new Date();
-  return d.getHours() * 60 + d.getMinutes();
-}
-
-type ScheduleStatus =
-  | { kind: 'current'; goal: Goal; minutesLeft: number }
-  | { kind: 'upcoming'; goal: Goal; minutesUntil: number }
-  | { kind: 'done' };
-
-function getScheduleStatus(goals: Goal[]): ScheduleStatus {
-  const now = nowInMinutes();
-
-  const current = goals.find((g) => {
-    const start = parseTimeToMinutes(g.startTime);
-    const end   = parseTimeToMinutes(g.endTime);
-    return now >= start && now < end;
-  });
-  if (current) {
-    return { kind: 'current', goal: current, minutesLeft: parseTimeToMinutes(current.endTime) - now };
-  }
-
-  const upcoming = goals
-    .filter((g) => parseTimeToMinutes(g.startTime) > now)
-    .sort((a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime))[0];
-
-  if (upcoming) {
-    return { kind: 'upcoming', goal: upcoming, minutesUntil: parseTimeToMinutes(upcoming.startTime) - now };
-  }
-
-  return { kind: 'done' };
-}
-
-// ─── channel setup ───────────────────────────────────────────────────────────
+// ─── channel setup ────────────────────────────────────────────────────────────
 
 async function setupChannels() {
   if (Platform.OS !== 'android') return;
@@ -72,22 +32,27 @@ async function setupChannels() {
     showBadge: false,
   });
 
-  // Alerting — unattended task nudges and 2-min-before alert
+  // High importance — sticky pre-task reminder (non-dismissable)
   await Notifications.setNotificationChannelAsync(NUDGE_CHANNEL_ID, {
     name: 'Task Reminders',
     importance: Notifications.AndroidImportance.HIGH,
-    vibrationPattern: [0, 400, 200, 400, 200, 400],
     enableVibrate: true,
+    vibrationPattern: [0, 400, 200, 400],
+    showBadge: false,
+  });
+
+  // MAX importance — unattended alarm, bypasses Do Not Disturb
+  await Notifications.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
+    name: 'Task Alarm',
+    importance: Notifications.AndroidImportance.MAX,
+    enableVibrate: true,
+    vibrationPattern: [0, 1000, 200, 1000, 200, 1000], // 3 strong pulses
+    bypassDnd: true,
     showBadge: false,
   });
 }
 
-async function requestPermissions() {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
-}
-
-// ─── notification senders ────────────────────────────────────────────────────
+// ─── timer notification ───────────────────────────────────────────────────────
 
 async function showTimerNotif(title: string, startedAt: number) {
   await Notifications.scheduleNotificationAsync({
@@ -113,29 +78,20 @@ async function showTimerNotif(title: string, startedAt: number) {
   });
 }
 
-async function showScheduleNotif(status: ScheduleStatus) {
-  if (status.kind === 'done') {
-    await Notifications.dismissNotificationAsync(SCHEDULE_NOTIF_ID);
-    return;
-  }
+// ─── sticky pre-task notification ─────────────────────────────────────────────
 
-  const { goal } = status;
-  const title = status.kind === 'current' ? `🟢 ${goal.title}` : `⏰ ${goal.title}`;
-  const body  = status.kind === 'current'
-    ? `${status.minutesLeft}m left  ·  ${goal.startTime}–${goal.endTime}`
-    : `Starts in ${status.minutesUntil}m  ·  ${goal.startTime}`;
-
+async function postSticky(title: string, body: string) {
   await Notifications.scheduleNotificationAsync({
-    identifier: SCHEDULE_NOTIF_ID,
+    identifier: STICKY_NOTIF_ID,
     content: {
       title,
       body,
-      sticky: true,  // persistent in tray — user can't swipe away
-      priority: Notifications.AndroidNotificationPriority.LOW,
+      sticky: true,
+      priority: Notifications.AndroidNotificationPriority.HIGH,
       ...(Platform.OS === 'android' && {
         android: {
-          channelId: TIMER_CHANNEL_ID,
-          ongoing: true,
+          channelId: NUDGE_CHANNEL_ID,
+          ongoing: true,       // non-dismissable on Android
           color: '#0f766e',
           smallIcon: 'ic_launcher',
         },
@@ -145,54 +101,106 @@ async function showScheduleNotif(status: ScheduleStatus) {
   });
 }
 
-// ─── public hook ─────────────────────────────────────────────────────────────
+// ─── public hook ──────────────────────────────────────────────────────────────
 
 export function useTimerNotification(todayGoals: Goal[], todayEntries: DayEntry[]) {
   const { startedAt, activeTaskTitle, activeTaskId, allocatedMinutes } = useTimerStore();
   const isRunning = !!startedAt;
 
-  // Audio player for foreground nudge sound
   const player = useAudioPlayer(ALERT_SOUND);
   const playerRef = useRef(player);
   playerRef.current = player;
 
-  const listenerRef        = useRef<Notifications.Subscription | null>(null);
-  const scheduleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isReschedulingRef  = useRef(false);
+  const listenerRef    = useRef<Notifications.Subscription | null>(null);
+  const alarmTimers    = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const stickyGoalRef  = useRef<string | null>(null); // goalId currently in sticky tray
 
-  // One-time setup
+  // ── alarm trigger (foreground: sound + vibration × 3 at 10s intervals) ─────
+  const triggerAlarmRef = useRef<() => void>(() => {});
+  triggerAlarmRef.current = useCallback(() => {
+    alarmTimers.current.forEach(clearTimeout);
+    alarmTimers.current = [];
+    for (let i = 0; i < 3; i++) {
+      const t = setTimeout(() => {
+        playerRef.current.seekTo(0);
+        playerRef.current.play();
+        Vibration.vibrate([0, 1000, 200, 1000, 200, 1000]);
+      }, i * 10_000);
+      alarmTimers.current.push(t);
+    }
+  }, []);
+
+  // ── one-time setup ────────────────────────────────────────────────────────
   useEffect(() => {
     setupChannels();
-    requestPermissions();
+    Notifications.requestPermissionsAsync();
 
     Notifications.setNotificationHandler({
       handleNotification: async (notif) => {
-        const id = notif.request.identifier;
-        const isNudge = id.startsWith('rex-nudge-') || id === TIMER_ALERT_NOTIF_ID;
-        // Play alert sound in-app for nudges/timer-alert; silence timer status bar
-        if (isNudge && AppState.currentState === 'active') {
-          playerRef.current.seekTo(0);
-          playerRef.current.play();
+        const id   = notif.request.identifier;
+        const data = notif.request.content.data as Record<string, unknown> | null;
+        const type = data?.type as string | undefined;
+
+        // Pre-task reminder → intercept and post as non-dismissable sticky
+        if (type === 'pre_task') {
+          stickyGoalRef.current = data?.goalId as string ?? null;
+          postSticky(
+            notif.request.content.title ?? '',
+            notif.request.content.body ?? '',
+          );
+          // Suppress the raw FCM banner — we posted our own sticky version
+          return { shouldShowBanner: false, shouldShowList: false, shouldPlaySound: false, shouldSetBadge: false };
         }
-        return {
-          shouldShowAlert: true,
-          shouldPlaySound: isNudge,
-          shouldSetBadge: false,
-        };
+
+        // Unattended alarm → play sound + vibrate × 3 if foregrounded
+        if (type === 'task_alarm') {
+          // Dismiss the sticky (task started being handled)
+          Notifications.dismissNotificationAsync(STICKY_NOTIF_ID);
+          stickyGoalRef.current = null;
+          if (AppState.currentState === 'active') {
+            triggerAlarmRef.current();
+            // Foreground: we handle the alarm ourselves — suppress FCM banner
+            return { shouldShowBanner: false, shouldShowList: false, shouldPlaySound: false, shouldSetBadge: false };
+          }
+          // Background: let the FCM alarm channel handle sound + vibration
+          return { shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false };
+        }
+
+        // 2-min timer alert (local, scheduled by this app)
+        if (id === TIMER_ALERT_NOTIF_ID) {
+          if (AppState.currentState === 'active') {
+            playerRef.current.seekTo(0);
+            playerRef.current.play();
+          }
+          return { shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false };
+        }
+
+        return { shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false };
       },
     });
 
-    listenerRef.current = Notifications.addNotificationResponseReceivedListener((res) => {
+    listenerRef.current = Notifications.addNotificationResponseReceivedListener(() => {
       router.push('/(app)/today');
     });
 
     return () => {
       listenerRef.current?.remove();
-      if (scheduleIntervalRef.current) clearInterval(scheduleIntervalRef.current);
+      alarmTimers.current.forEach(clearTimeout);
     };
   }, []);
 
-  // Timer ongoing notification (progress bar in tray)
+  // ── dismiss sticky when entry is logged for the active sticky goal ─────────
+  useEffect(() => {
+    const goalId = stickyGoalRef.current;
+    if (!goalId) return;
+    const hasEntry = todayEntries.some((e) => e.goalId === goalId);
+    if (hasEntry) {
+      Notifications.dismissNotificationAsync(STICKY_NOTIF_ID);
+      stickyGoalRef.current = null;
+    }
+  }, [todayEntries]);
+
+  // ── timer ongoing notification ────────────────────────────────────────────
   useEffect(() => {
     if (isRunning && startedAt) {
       showTimerNotif(activeTaskTitle, startedAt);
@@ -201,10 +209,9 @@ export function useTimerNotification(todayGoals: Goal[], todayEntries: DayEntry[
     }
   }, [isRunning, startedAt, activeTaskTitle]);
 
-  // 2-min-before timer alert — OS-scheduled so it fires even when backgrounded
+  // ── 2-min-before timer alert (OS-scheduled, fires even when backgrounded) ──
   useEffect(() => {
     Notifications.cancelScheduledNotificationAsync(TIMER_ALERT_NOTIF_ID);
-
     if (!startedAt || !allocatedMinutes || allocatedMinutes < 3) return;
 
     const fireAt = new Date(startedAt + (allocatedMinutes - 2) * 60 * 1000);
@@ -220,49 +227,7 @@ export function useTimerNotification(todayGoals: Goal[], todayEntries: DayEntry[
           android: { channelId: NUDGE_CHANNEL_ID, color: '#0f766e', smallIcon: 'ic_launcher' },
         }),
       },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: fireAt,
-      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
     });
   }, [startedAt, allocatedMinutes, activeTaskTitle]);
-
-  // Always-on schedule notification — 60s refresh while foregrounded
-  useEffect(() => {
-    if (scheduleIntervalRef.current) clearInterval(scheduleIntervalRef.current);
-    if (!todayGoals.length) {
-      Notifications.dismissNotificationAsync(SCHEDULE_NOTIF_ID);
-      return;
-    }
-    const tick = () => showScheduleNotif(getScheduleStatus(todayGoals));
-    tick();
-    scheduleIntervalRef.current = setInterval(tick, 60_000);
-    return () => { if (scheduleIntervalRef.current) clearInterval(scheduleIntervalRef.current); };
-  }, [todayGoals]);
-
-  // Pre-schedule OS nudge notifications + persist data for background task
-  const doReschedule = useCallback(async () => {
-    if (isReschedulingRef.current) return;
-    isReschedulingRef.current = true;
-    try {
-      await rescheduleAllNudges(todayGoals, todayEntries, activeTaskId);
-    } finally {
-      isReschedulingRef.current = false;
-    }
-  }, [todayGoals, todayEntries, activeTaskId]);
-
-  useEffect(() => {
-    doReschedule();
-  }, [doReschedule]);
-
-  // Re-evaluate when app comes back to foreground
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        showScheduleNotif(getScheduleStatus(todayGoals));
-        doReschedule();
-      }
-    });
-    return () => sub.remove();
-  }, [todayGoals, doReschedule]);
 }

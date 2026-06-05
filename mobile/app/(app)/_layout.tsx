@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sun, Grid2x2, Target, LogOut } from 'lucide-react-native';
 import { COLORS, TYPE } from '@/config/designTokens';
 import { useAuthStore } from '@/stores/authStore';
+import { useLogout } from '@/hooks/useAuth';
 import { FloatingTimerPill } from '@/components/FloatingTimerPill';
 import { useTimerNotification } from '@/hooks/useTimerNotification';
 import { useNotificationSetup } from '@/hooks/useNotificationSetup';
@@ -15,12 +16,12 @@ import { todayString, isWeekend } from '@/utils/formatDate';
 export default function AppLayout() {
   const insets = useSafeAreaInsets();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const doLogout = useLogout();
 
   const handleLogout = () => {
     Alert.alert('Sign out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => clearAuth() },
+      { text: 'Sign out', style: 'destructive', onPress: () => doLogout() },
     ]);
   };
   const { data: goals } = useGoals(false);

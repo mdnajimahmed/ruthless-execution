@@ -18,22 +18,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
     const token = tokenStorage.get();
     if (token) {
-      verifyToken();
+      verifySession();
     } else {
       setLoading(false);
     }
   }, []);
 
-  const verifyToken = async () => {
+  const verifySession = async () => {
     try {
       const response = await authApi.verify();
       setUser(response.user);
-    } catch (error) {
-      // Token invalid, clear it
-      tokenStorage.remove();
+    } catch {
+      // apiRequest already attempted a silent refresh; if we still fail, clear everything
+      tokenStorage.clear();
       setUser(null);
     } finally {
       setLoading(false);
@@ -43,24 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await authApi.login({ email, password });
     tokenStorage.set(response.token);
+    tokenStorage.setRefresh(response.refreshToken);
     setUser(response.user);
   };
 
   const logout = () => {
-    tokenStorage.remove();
+    const refreshToken = tokenStorage.getRefresh() ?? undefined;
+    authApi.logout(refreshToken);
+    tokenStorage.clear();
     setUser(null);
     navigate('/login');
   };
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        logout,
-        isAuthenticated: !!user,
-      }}
+      value={{ user, loading, login, logout, isAuthenticated: !!user }}
     >
       {children}
     </AuthContext.Provider>
@@ -69,8 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

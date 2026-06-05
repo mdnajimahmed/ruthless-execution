@@ -61,8 +61,11 @@ jobs:
           key: gradle-${{ hashFiles('mobile/package-lock.json') }}
           restore-keys: gradle-
 
-      - name: Write .env
-        run: echo "EXPO_PUBLIC_API_URL=https://turinghatch.com/ruthless-execution/api" > mobile/.env
+      - name: Write .env.production
+        run: echo "EXPO_PUBLIC_API_URL=https://turinghatch.com/ruthless-execution/api" > mobile/.env.production
+
+      - name: Write google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > mobile/google-services.json
 
       - name: Prebuild Android
         working-directory: mobile
