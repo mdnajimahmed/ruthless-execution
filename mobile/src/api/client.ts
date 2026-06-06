@@ -74,9 +74,14 @@ apiClient.interceptors.response.use(
       drainQueue(null, token);
       isRefreshing = false;
       return apiClient(original);
-    } catch (refreshError) {
-      const { useAuthStore } = await import('@/stores/authStore');
-      await useAuthStore.getState().clearAuth();
+    } catch (refreshError: any) {
+      // Only wipe stored credentials when the server explicitly rejects the
+      // refresh token (401). Network timeouts / 5xx errors are transient —
+      // clearing valid tokens here would log the user out permanently.
+      if (refreshError?.response?.status === 401) {
+        const { useAuthStore } = await import('@/stores/authStore');
+        await useAuthStore.getState().clearAuth();
+      }
       drainQueue(refreshError, null);
       isRefreshing = false;
       return Promise.reject(refreshError);

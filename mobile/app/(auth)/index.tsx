@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -9,6 +9,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { COLORS, SPACING, TYPE, RADIUS, SHADOWS } from '@/config/designTokens';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useLogin } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 import { API_URL } from '@/api/client';
 import type { LoginRequest } from '@/types/auth';
 
@@ -16,6 +17,15 @@ export default function LoginScreen() {
   const { control, handleSubmit, formState: { errors } } = useForm<LoginRequest>();
   const { mutate: login, isPending, error } = useLogin();
   const [showPassword, setShowPassword] = useState(false);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(app)/today');
+    }
+  }, [isAuthenticated]);
+
+  if (isAuthenticated) return null;
 
   const onSubmit = (data: LoginRequest) => {
     login(data, {

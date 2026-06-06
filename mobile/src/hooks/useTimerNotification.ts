@@ -70,7 +70,7 @@ async function showTimerNotif(title: string, startedAt: number) {
           when: startedAt,
           showWhen: true,
           color: '#0f766e',
-          smallIcon: 'ic_launcher',
+          smallIcon: 'notification_icon',
         },
       }),
     },
@@ -93,7 +93,7 @@ async function postSticky(title: string, body: string) {
           channelId: NUDGE_CHANNEL_ID,
           ongoing: true,       // non-dismissable on Android
           color: '#0f766e',
-          smallIcon: 'ic_launcher',
+          smallIcon: 'notification_icon',
         },
       }),
     },
@@ -224,7 +224,7 @@ export function useTimerNotification(todayGoals: Goal[], todayEntries: DayEntry[
         body: activeTaskTitle,
         sound: true,
         ...(Platform.OS === 'android' && {
-          android: { channelId: NUDGE_CHANNEL_ID, color: '#0f766e', smallIcon: 'ic_launcher' },
+          android: { channelId: NUDGE_CHANNEL_ID, color: '#0f766e', smallIcon: 'notification_icon' },
         }),
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },

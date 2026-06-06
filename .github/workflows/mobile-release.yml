@@ -65,13 +65,26 @@ jobs:
         run: echo "EXPO_PUBLIC_API_URL=https://turinghatch.com/ruthless-execution/api" > mobile/.env.production
 
       - name: Write google-services.json
-        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > mobile/google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          printf '%s' "$GOOGLE_SERVICES_JSON" > mobile/google-services.json
+          if ! grep -q '"project_info"' mobile/google-services.json; then
+            echo "❌ GOOGLE_SERVICES_JSON secret is missing or malformed — add it in repo Settings → Secrets"
+            exit 1
+          fi
+          echo "✅ google-services.json OK ($(wc -c < mobile/google-services.json) bytes)"
 
       - name: Prebuild Android
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --clean
         env:
           EXPO_PUBLIC_API_URL: https://turinghatch.com/ruthless-execution/api
+
+      - name: Restore google-services.json after prebuild
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" > mobile/android/app/google-services.json
 
       - name: Stamp versionCode + versionName
         run: |
